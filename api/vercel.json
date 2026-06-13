@@ -3,10 +3,8 @@
   "functions": {
     "api/tts.js": { "memory": 256, "maxDuration": 30 }
   },
-  "routes": [
-    { "src": "/api/tts", "dest": "/api/tts.js" },
-    { "src": "/img1.jpg", "dest": "/public/img1.jpg" },
-    { "src": "/img2.jpg", "dest": "/public/img2.jpg" },
-    { "src": "/(.*)", "dest": "/public/index.html" }
+  "rewrites": [
+    { "source": "/api/tts", "destination": "/api/tts.js" },
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }
