@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#FDF6CC"/>
+<title>Celeste</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#FDF6CC;}
+#root{min-height:100vh;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+/* ═══════════════════════════════════════════════════════════════
+   CELESTE  ✦  The Manifestation App
+   Palette: Pantone Buttercream + Pink Icing + Sage + Ivory
+   Inspired by: Stella's cinematic stories + Myla's directness
+   No voice · AI-style personalized narratives · Bilingual EN/ES
+ */
+const G = `
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#FEFAF3;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;}
+::placeholder{color:rgba(160,120,100,0.42);font-style:italic;}
+::-webkit-scrollbar{width:0;}
+input:focus,textarea:focus{outline:none!important;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+@keyframes shimmer{0%,100%{box-shadow:0 0 50px rgba(245,220,130,0.35),0 0 100px rgba(245,190,200,0.18);}50%{box-shadow:0 0 80px rgba(245,220,130,0.55),0 0 160px rgba(245,190,200,0.32);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes obIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideRight{from{transform:translateX(-20px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes rayGrow{from{transform:scaleY(0);opacity:0;}to{transform:scaleY(1);opacity:1;}}
+@keyframes ringExpand{from{transform:scale(0.2);opacity:0;}to{transform:scale(1);opacity:1;}}
+@keyframes starPop{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.5);opacity:1;}100%{transform:scale(1);opacity:0.9;}}
+@keyframes archRise{from{opacity:0;transform:translateY(60px);}to{opacity:1;transform:translateY(0);}}
+@keyframes coreGlow{0%,100%{box-shadow:0 0 40px rgba(245,220,130,0.6),0 0 80px rgba(240,184,192,0.35),0 0 120px rgba(245,220,130,0.20);}50%{box-shadow:0 0 70px rgba(245,220,130,0.90),0 0 140px rgba(240,184,192,0.55),0 0 200px rgba(245,220,130,0.30);}}
+@keyframes titleShimmer{0%,100%{text-shadow:0 0 0px rgba(245,220,130,0);}50%{text-shadow:0 0 40px rgba(245,220,130,0.60),0 0 80px rgba(240,184,192,0.35);}}
+@keyframes splashExit{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.06);}}
+@keyframes glitter{0%{opacity:0;transform:scale(0) rotate(0deg);}50%{opacity:1;transform:scale(1) rotate(180deg);}100%{opacity:0;transform:scale(0) rotate(360deg);}}
+@keyframes particleDrift{0%{transform:translateY(0) translateX(0) scale(1);opacity:0.7;}100%{transform:translateY(-80px) translateX(var(--dx)) scale(0.3);opacity:0;}}
+.fu{animation:fadeUp 0.55s ease both;}
+.ob{animation:obIn 0.45s ease both;}
+.fi{animation:fadeIn 0.4s ease both;}
+.orb-idle{animation:float 5s ease-in-out infinite,shimmer 4s ease-in-out infinite;}
+.orb-play{animation:pulse 2.5s ease-in-out infinite,shimmer 3s ease-in-out infinite;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:rgba(245,220,130,0.30);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#E8B86D;cursor:pointer;}
+`;
+
+/* ─── Palette ─────────────────────────────────────────────────── */
+const P = {
+  /* Pantone Buttercream */
+  butter:   "#F5DC82",
+  butterL:  "#FBF0B2",
+  butterD:  "#E8C840",
+  /* Pantone Pink Icing */
+  pink:     "#F0B8C0",
+  pinkL:    "#FAE5E8",
+  pinkD:    "#D98090",
+  /* Sage green accent */
+  sage:     "#8B9E7A",
+  sageL:    "#C5D4B8",
+  /* Base */
+  ivory:    "#FEFAF3",
+  cream:    "#FEF5E7",
+  white:    "#FFFFFF",
+  ink:      "#1F1208",
+  body:     "rgba(30,18,8,0.70)",
+  muted:    "rgba(120,85,65,0.55)",
+  border:   "rgba(245,220,130,0.32)",
+  borderP:  "rgba(240,184,192,0.42)",
+  /* Gradients */
+  heroGrad: "linear-gradient(145deg,#FEFAF3 0%,#FEF5E7 35%,#FBF0B2 60%,#FAE5E8 100%)",
+  cardGrad: "linear-gradient(135deg,#FEFAF3 0%,#FBF0B2 50%,#FAE5E8 100%)",
+};
+const PF = "'Playfair Display',Georgia,serif";
+const SF = "'DM Sans',sans-serif";
+
+/* ─── Helpers ─────────────────────────────────────────────────── */
+function loc(s){if(!s)return null;return s.trim().split(/[,.\-–]/)[0].replace(/^(a |an |my |our |the )/i,"").trim()||null;}
+const has=(s,...t)=>t.some(x=>new RegExp(x,"i").test(s||""));
+
+/* ─── Astrology ───────────────────────────────────────────────── */
+const ZODIAC=[
+  {s:"Aries",e:"♈",d:"Mar 21–Apr 19",el:"Fire",r:"Mars",
+   en:{t:"You manifest through bold action and unstoppable courage.",m:"I initiate. I act. I arrive first."},
+   es:{t:"Manifiestas a través de la acción audaz y el coraje imparable.",m:"Inicio. Actúo. Llego primero."}},
+  {s:"Taurus",e:"♉",d:"Apr 20–May 20",el:"Earth",r:"Venus",
+   en:{t:"You build slowly, beautifully, permanently. Your manifestations become real and lasting.",m:"I build. I receive. I am worthy of luxury."},
+   es:{t:"Construyes despacio, bellamente, permanentemente.",m:"Construyo. Recibo. Merezco el lujo."}},
+  {s:"Gemini",e:"♊",d:"May 21–Jun 20",el:"Air",r:"Mercury",
+   en:{t:"Your words are wands. Speak your vision into existence.",m:"I speak it. I think it. I become it."},
+   es:{t:"Tus palabras son varitas. Habla tu visión para que exista.",m:"Lo digo. Lo pienso. Me convierto en ello."}},
+  {s:"Cancer",e:"♋",d:"Jun 21–Jul 22",el:"Water",r:"Moon",
+   en:{t:"You manifest from the inside out. Your emotions are your most powerful compass.",m:"I feel. I nurture. I receive love fully."},
+   es:{t:"Manifiestas desde adentro. Tus emociones son tu brújula más poderosa.",m:"Siento. Nutro. Recibo amor plenamente."}},
+  {s:"Leo",e:"♌",d:"Jul 23–Aug 22",el:"Fire",r:"Sun",
+   en:{t:"You were born to shine and be seen. Your manifestation is a performance of your highest self.",m:"I shine. I lead. I am adored."},
+   es:{t:"Naciste para brillar y ser vista. Tu manifestación es tu yo más elevado.",m:"Brillo. Lidero. Soy adorada."}},
+  {s:"Virgo",e:"♍",d:"Aug 23–Sep 22",el:"Earth",r:"Mercury",
+   en:{t:"You make the intangible real. Your precision turns every dream into a plan.",m:"I refine. I heal. I manifest through mastery."},
+   es:{t:"Haces lo intangible real. Tu precisión convierte cada sueño en un plan.",m:"Refino. Sano. Manifiesto con maestría."}},
+  {s:"Libra",e:"♎",d:"Sep 23–Oct 22",el:"Air",r:"Venus",
+   en:{t:"You manifest through beauty and harmony. Love and abundance are your natural language.",m:"I balance. I attract. I deserve beauty."},
+   es:{t:"Manifiestas a través de la belleza y la armonía.",m:"Equilibro. Atraigo. Merezco belleza."}},
+  {s:"Scorpio",e:"♏",d:"Oct 23–Nov 21",el:"Water",r:"Pluto",
+   en:{t:"You manifest through depth and total transformation. What you desire, you transmute into reality.",m:"I transform. I desire deeply. I manifest power."},
+   es:{t:"Manifiestas a través de la profundidad y la transformación.",m:"Me transformo. Deseo profundamente. Manifiesto poder."}},
+  {s:"Sagittarius",e:"♐",d:"Nov 22–Dec 21",el:"Fire",r:"Jupiter",
+   en:{t:"You manifest through expansion, faith, and freedom. Your belief is your greatest superpower.",m:"I expand. I believe. I receive abundantly."},
+   es:{t:"Manifiestas a través de la expansión y la fe. Tu creencia es tu mayor superpoder.",m:"Me expando. Creo. Recibo abundantemente."}},
+  {s:"Capricorn",e:"♑",d:"Dec 22–Jan 19",el:"Earth",r:"Saturn",
+   en:{t:"You manifest through discipline, legacy, and strategic vision. Time is always on your side.",m:"I climb. I build. I arrive exactly on time."},
+   es:{t:"Manifiestas a través de la disciplina y el legado. El tiempo siempre está a tu favor.",m:"Escalo. Construyo. Llego exactamente a tiempo."}},
+  {s:"Aquarius",e:"♒",d:"Jan 20–Feb 18",el:"Air",r:"Uranus",
+   en:{t:"You manifest for the collective. Your vision is ahead of its time — and it is arriving.",m:"I innovate. I liberate. I vision what's next."},
+   es:{t:"Manifiestas para el colectivo. Tu visión está adelantada a su tiempo.",m:"Innovo. Libero. Visualizo lo que viene."}},
+  {s:"Pisces",e:"♓",d:"Feb 19–Mar 20",el:"Water",r:"Neptune",
+   en:{t:"You manifest through surrender, imagination, and divine trust. Dreams are your blueprints.",m:"I trust. I dream. I receive with open hands."},
+   es:{t:"Manifiestas a través de la entrega y la imaginación. Los sueños son tus planos.",m:"Confío. Sueño. Recibo con manos abiertas."}},
+];
+function getSign(dob){
+  if(!dob)return null;
+  const d=new Date(dob+"T12:00:00"),mo=d.getMonth()+1,dy=d.getDate();
+  if((mo===3&&dy>=21)||(mo===4&&dy<=19))return ZODIAC[0];
+  if((mo===4&&dy>=20)||(mo===5&&dy<=20))return ZODIAC[1];
+  if((mo===5&&dy>=21)||(mo===6&&dy<=20))return ZODIAC[2];
+  if((mo===6&&dy>=21)||(mo===7&&dy<=22))return ZODIAC[3];
+  if((mo===7&&dy>=23)||(mo===8&&dy<=22))return ZODIAC[4];
+  if((mo===8&&dy>=23)||(mo===9&&dy<=22))return ZODIAC[5];
+  if((mo===9&&dy>=23)||(mo===10&&dy<=22))return ZODIAC[6];
+  if((mo===10&&dy>=23)||(mo===11&&dy<=21))return ZODIAC[7];
+  if((mo===11&&dy>=22)||(mo===12&&dy<=21))return ZODIAC[8];
+  if((mo===12&&dy>=22)||(mo===1&&dy<=19))return ZODIAC[9];
+  if((mo===1&&dy>=20)||(mo===2&&dy<=18))return ZODIAC[10];
+  return ZODIAC[11];
+}
+function getMoonPhase(){
+  const phases=["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"];
+  const d=new Date();
+  const dayY=Math.floor((d-(new Date(d.getFullYear(),0,0)))/86400000);
+  return phases[Math.floor((dayY%30)/3.75)%8];
+}
+
+/* ─── Story Engine — personalized cinematic narratives ─────────── */
+function buildBanks(a,lang){
+  const place=loc(a.home)||(lang==="es"?"mi hogar":"my home");
+  const vision=a.vision||"";
+  const isHigh=has(place,"penthouse","loft","piso","alto","tower","sky","floor");
+  const isSea=has(place,"beach","sea","ocean","playa","mar","villa","bali","island","costa");
+  const isHot=has(a.morning||"","matcha","coffee","café","espresso","tea","té");
+  const isMove=has(a.morning||"","yoga","pilates","run","gym","workout","swim");
+  const isBrand=has(a.career||vision,"brand","business","founder","ceo","marca","negocio","empresa");
+  const isCreate=has(a.career||vision,"creat","design","art","write","photo","studio","music","content","diseñ");
+  const isPass=has(a.career||vision,"passive","invest","income","portfolio","dividendo","pasivo");
+  const isHim=has(a.love||vision,"partner","husband","him","he","boyfriend","él","novio","esposo","pareja","roger","married","casada","amor");
+  const isSelf=has(a.love||"","myself","self","worth","deserve","confianza","autoestima","yo misma");
+  const feel=(a.feeling||"").split(/[,.]/)[0].toLowerCase().trim();
+
+  const t=(en,es)=>lang==="es"?es:en;
+  return {
+    wake:[
+      t(`The alarm never sounds. I open my eyes in my own time, the way a body learns to trust morning when it no longer dreads it. The first thing I feel isn't urgency. It's quiet. Real, settled quiet.`,
+        `La alarma no suena. Abro los ojos a mi propio tiempo, como el cuerpo aprende a confiar en la mañana cuando ya no le teme. Lo primero que siento no es urgencia. Es silencio. Un silencio real y profundo.`),
+      t(`There is light in the room already, angled and golden, landing across the bed in long warm stripes. I don't reach for my phone. Not yet. I lie still and let myself remember: this is the life I asked for.`,
+        `Ya hay luz en la habitación, dorada y en ángulo, cayendo sobre la cama en franjas cálidas. No busco el teléfono. Todavía no. Me quedo quieta y me recuerdo: esta es la vida que pedí.`),
+      t(`Seven in the morning and no one needs me yet. That gap between waking and beginning — I built it on purpose. I protect it like something sacred. It is.`,
+        `Las siete de la mañana y nadie me necesita todavía. Ese espacio entre despertar y empezar — lo construí a propósito. Lo protejo como algo sagrado. Lo es.`),
+      t(`I wake slowly. Without urgency. The day is waiting for me, not the other way around. I take a breath and feel the weight of the life I chose settling around me like something earned.`,
+        `Me despierto despacio. Sin urgencia. El día me espera a mí, no al revés. Respiro y siento el peso de la vida que elegí asentarse a mi alrededor como algo ganado.`),
+      t(`Morning starts with a prayer. Not from fear — from overflow. Thank you for this day, this life, this version of me who no longer waits for permission to be well.`,
+        `La mañana empieza con una oración. No desde el miedo — desde la abundancia. Gracias por este día, esta vida, esta versión de mí que ya no espera permiso para estar bien.`),
+    ],
+    home: isHigh?[
+      t(`I walk to the window. The city is forty floors below — the traffic, the noise, the rush — and none of it reaches me up here. I hold my coffee and look at it all the way a person looks at something they've outgrown. With tenderness and no desire to return.`,
+        `Camino hacia la ventana. La ciudad está cuarenta pisos más abajo — el tráfico, el ruido, la prisa — y nada de eso me alcanza aquí arriba. Sostengo mi café y lo miro todo como una persona mira algo que ha superado. Con ternura y sin ganas de volver.`),
+      t(`The glass runs floor to ceiling and the morning light breaks through it in small rainbows. I built this view. Not the view — the life that earned it. I stand here and feel the difference between dreaming something and standing inside it.`,
+        `El vidrio va del suelo al techo y la luz de la mañana lo atraviesa en pequeños arcoíris. Construí esta vista. No la vista — la vida que la mereció. Me quedo aquí de pie y siento la diferencia entre soñar algo y estar dentro de ello.`),
+      t(`From here the city looks like a map of everything I used to look up at. I remember doing that — standing at street level thinking someday. Someday arrived. It arrived quietly and stayed.`,
+        `Desde aquí la ciudad parece un mapa de todo lo que solía mirar desde abajo. Recuerdo haber hecho eso — parada en la calle pensando algún día. Algún día llegó. Llegó en silencio y se quedó.`),
+      t(`Something shifts in you when you live above the noise. It isn't arrogance. It's perspective. I take my coffee to the window and think with a clarity I didn't used to have, about things that used to feel impossible.`,
+        `Algo cambia en ti cuando vives por encima del ruido. No es arrogancia. Es perspectiva. Llevo mi café a la ventana y pienso con una claridad que antes no tenía, sobre cosas que antes parecían imposibles.`),
+      t(`The sun reaches these windows before it reaches the streets. I like being the first to receive it — this small advantage of height, this particular kind of morning that belongs only to those who chose to climb.`,
+        `El sol llega a estas ventanas antes de llegar a las calles. Me gusta ser la primera en recibirlo — esta pequeña ventaja de la altura, este tipo particular de mañana que pertenece solo a quienes eligieron subir.`),
+    ]:isSea?[
+      t(`The terrace doors are open and the air that comes in smells of jasmine and salt. I step outside barefoot onto warm stone and stand completely still. The sea is there. It's always there. I never stop being grateful that I got to choose this.`,
+        `Las puertas de la terraza están abiertas y el aire que entra huele a jazmín y sal. Salgo descalza sobre la piedra cálida y me quedo completamente quieta. El mar está ahí. Siempre está. Nunca dejo de agradecer haber podido elegir esto.`),
+      t(`I make my coffee and carry it outside. The water is right there, and the light on it this morning is doing something I don't have a word for. I just look at it and breathe and feel something settle in my chest that has been loose for a long time.`,
+        `Preparo mi café y lo llevo afuera. El agua está justo ahí, y la luz sobre ella esta mañana está haciendo algo para lo que no tengo palabras. Solo la miro y respiro y siento que algo se asienta en mi pecho que ha estado suelto por mucho tiempo.`),
+      t(`Morning here has a sound — the water, the birds, a particular quality of silence that only exists beside the sea. I live inside that sound now. I stopped at nothing to get here. It was worth every single thing it cost.`,
+        `La mañana aquí tiene un sonido — el agua, los pájaros, una calidad particular de silencio que solo existe junto al mar. Ahora vivo dentro de ese sonido. No me detuve ante nada para llegar aquí. Valió cada cosa que costó.`),
+      t(`I go out to the terrace and do nothing for a while. No phone. No agenda. Just me and the water and the particular gift of a morning that belongs entirely to me. I used to think this was selfish. Now I know it's necessary.`,
+        `Salgo a la terraza y no hago nada por un rato. Sin teléfono. Sin agenda. Solo yo y el agua y el regalo particular de una mañana que me pertenece completamente. Solía pensar que esto era egoísta. Ahora sé que es necesario.`),
+      t(`The sea is the same color it was yesterday and will be tomorrow. That constancy is something I've learned to love — the way certain beautiful things just stay. I've become someone who has things that just stay.`,
+        `El mar tiene el mismo color que ayer y que tendrá mañana. Esa constancia es algo que aprendí a amar — la forma en que ciertas cosas hermosas simplemente permanecen. Me he convertido en alguien que tiene cosas que simplemente permanecen.`),
+    ]:[
+      t(`The house holds its quiet in the mornings the way a good house does — like it's been saving it for you. I walk through the rooms I chose, in the order I like, and every room confirms: this is what it feels like to live like yourself.`,
+        `La casa guarda su silencio por las mañanas como lo hace una buena casa — como si lo hubiera estado guardando para ti. Camino por los cuartos que elegí, en el orden que me gusta, y cada cuarto confirma: así se siente vivir como tú misma.`),
+      t(`The east light comes through the kitchen window for about forty minutes every morning. I'm always up for those forty minutes. I figured out a long time ago that they're the best part of the day — before anything asks anything of you.`,
+        `La luz del este entra por la ventana de la cocina durante unos cuarenta minutos cada mañana. Siempre estoy despierta esos cuarenta minutos. Descubrí hace mucho tiempo que son la mejor parte del día — antes de que nada te pida nada.`),
+      t(`There's a plant by the window I water every morning. Small, thriving. I think about how the things you tend keep growing — the plant, the faith, the version of yourself you decided to become.`,
+        `Hay una planta junto a la ventana que riego cada mañana. Pequeña, próspera. Pienso en cómo las cosas que cuidas siguen creciendo — la planta, la fe, la versión de ti misma que decidiste convertirte.`),
+      t(`I know this house like I know my own hands — which step creaks, where the light falls best at each hour. It knows me back. That reciprocity between a person and the space they chose is underrated. I notice it every single morning.`,
+        `Conozco esta casa como conozco mis propias manos — qué escalón cruje, dónde cae mejor la luz a cada hora. Ella me conoce a mí también. Esa reciprocidad entre una persona y el espacio que eligió es subestimada. La noto cada mañana.`),
+      t(`Space is the thing I notice most. Not the square footage — the breathing room. The way this place has air and light and quiet exactly when I need them. I spent a long time without this kind of space. I will never take it for granted again.`,
+        `El espacio es lo que más noto. No los metros cuadrados — el espacio para respirar. La forma en que este lugar tiene aire y luz y silencio exactamente cuando los necesito. Pasé mucho tiempo sin este tipo de espacio. Nunca más lo daré por sentado.`),
+    ],
+    morn: isHot?[
+      t(`I heat the water before I look at my phone. That single rule changed my life more than most decisions I've made. The matcha or the coffee, the slow pour, the first taste — this is mine. The rest of the day can wait another ten minutes.`,
+        `Caliento el agua antes de mirar el teléfono. Esa sola regla cambió mi vida más que la mayoría de las decisiones que he tomado. El matcha o el café, el vertido lento, el primer sorbo — esto es mío. El resto del día puede esperar diez minutos más.`),
+      t(`I make the coffee slowly. Grind the beans, wait for the bloom, pour in circles. Nobody is waiting for me right now. There is no version of this morning in which I'm already late. That used to not be true. I built it to be true.`,
+        `Preparo el café despacio. Muelo los granos, espero el bloom, vierto en círculos. Nadie me espera ahora mismo. No hay ninguna versión de esta mañana en la que ya llegué tarde. Eso antes no era cierto. Lo construí para que lo fuera.`),
+      t(`I settle with my cup in my favorite spot — the window, the corner of the sofa, the step outside — and I do nothing in particular for a few minutes. The day hasn't asked anything of me yet. I stay in that space on purpose, a little longer than necessary.`,
+        `Me acomodo con mi taza en mi lugar favorito — la ventana, el rincón del sofá, el escalón de afuera — y no hago nada en particular por unos minutos. El día no me ha pedido nada todavía. Me quedo en ese espacio a propósito, un poco más de lo necesario.`),
+      t(`The first cup I drink slowly, standing at the window, not looking at anything specific. Just here. Just this. I used to feel guilty about mornings like this. Now I understand that they're the whole point.`,
+        `La primera taza la bebo despacio, de pie en la ventana, sin mirar nada específico. Solo aquí. Solo esto. Antes me sentía culpable por mañanas así. Ahora entiendo que son el punto central.`),
+      t(`Making my morning drink is a ritual. Not a habit — a ritual. There's an intention in it. A slowness. A message I send to my own nervous system: you are not behind. You are not late. There is enough time. There is enough of everything.`,
+        `Preparar mi bebida matutina es un ritual. No un hábito — un ritual. Hay una intención en ello. Una lentitud. Un mensaje que le envío a mi propio sistema nervioso: no estás atrasada. No llegas tarde. Hay tiempo suficiente. Hay suficiente de todo.`),
+    ]:isMove?[
+      t(`I unroll the mat while the neighborhood is still asleep. Moving through the sequence I know by heart, I feel something release somewhere in my body — something held since yesterday — and I breathe it out completely. This is what health feels like when it isn't performing.`,
+        `Extiendo el tapete mientras el vecindario todavía duerme. Moviéndome por la secuencia que sé de memoria, siento que algo se libera en algún lugar de mi cuerpo — algo sostenido desde ayer — y lo exhalo completamente. Así se siente la salud cuando no está actuando.`),
+      t(`I go out to run while the city is still warm with sleep. The rhythm of my feet, my breath, the sky getting lighter ahead of me — it all feels like gratitude in motion. Like the version of me who asked for this life, out here thanking the version who received it.`,
+        `Salgo a correr mientras la ciudad todavía está tibia de sueño. El ritmo de mis pies, mi respiración, el cielo aclarándose frente a mí — todo se siente como gratitud en movimiento. Como la versión de mí que pidió esta vida, aquí afuera agradeciendo a la versión que la recibió.`),
+      t(`Morning movement isn't punishment anymore. It hasn't been for a long time. It's a conversation with my body — I'm listening to it, responding to it, telling it: I'm paying attention. You matter. We're doing this together.`,
+        `El movimiento matutino ya no es castigo. No lo ha sido por mucho tiempo. Es una conversación con mi cuerpo — lo escucho, le respondo, le digo: estoy prestando atención. Importas. Hacemos esto juntas.`),
+      t(`I finish the practice with a few minutes of stillness. No music, no phone. Just the particular quiet that exists after movement — earned quiet, different from any other kind. I stay in it until I'm ready to begin.`,
+        `Termino la práctica con unos minutos de quietud. Sin música, sin teléfono. Solo la particular tranquilidad que existe después del movimiento — quietud ganada, diferente a cualquier otro tipo. Me quedo en ella hasta que estoy lista para empezar.`),
+      t(`My body feels capable in a way it didn't always. Strong in the way something well-used is strong — not for show, just for life. I move through my morning and feel the simple, enormous luxury of being well inside my own skin.`,
+        `Mi cuerpo se siente capaz de una manera que no siempre fue así. Fuerte de la manera en que algo bien usado es fuerte — no para mostrar, solo para vivir. Paso por mi mañana y siento el lujo simple y enorme de estar bien dentro de mi propia piel.`),
+    ]:[
+      t(`The morning unfolds without demands. No backup alarm, no list already waiting. Just me, this space, and the rare gift of beginning the day exactly as I choose. I used to feel guilty about this. Now I understand it's called alignment.`,
+        `La mañana se despliega sin demandas. Sin alarma de respaldo, sin lista esperando. Solo yo, este espacio, y el raro regalo de empezar el día exactamente como elijo. Antes me sentía culpable por esto. Ahora entiendo que se llama alineación.`),
+      t(`I take my time. Full stop. I learned — eventually, after years of rushing — that the soft hours before the world comes in are worth protecting. Worth building a life around. I built one.`,
+        `Me tomo mi tiempo. Punto. Aprendí — eventualmente, después de años de prisa — que las horas suaves antes de que el mundo entre valen la pena proteger. Vale la pena construir una vida alrededor de ellas. Construí una.`),
+      t(`I let myself do nothing for a while. Just exist in the morning without performing productivity. This, I eventually learned, is its own form of discipline — arriving at the day whole, with something real to give.`,
+        `Me permito no hacer nada por un rato. Solo existir en la mañana sin actuar productividad. Esto, eventualmente aprendí, es su propia forma de disciplina — llegar al día entera, con algo real que dar.`),
+      t(`The morning belongs to me. Entirely, without apology. I guard those hours the way I guard everything that cost me something to build. Because they did cost something. And they are worth everything.`,
+        `La mañana me pertenece. Completamente, sin disculpas. Guardo esas horas de la manera en que guardo todo lo que me costó construir. Porque sí costó algo. Y valen todo.`),
+      t(`I stay in the soft hours a little longer than strictly necessary. Not because I'm avoiding the day — because I've learned the difference between rest and avoidance, and I've built a life where the morning is genuinely good.`,
+        `Me quedo en las horas suaves un poco más de lo estrictamente necesario. No porque esté evitando el día — porque he aprendido la diferencia entre descanso y evasión, y he construido una vida donde la mañana es genuinamente buena.`),
+    ],
+    work: isBrand?[
+      t(`Around ten I open my laptop and there's a message from my team: last month's numbers came in. I read them twice. Then I lean back and feel the specific satisfaction of having built something that works while I sleep — something real, from nothing, from faith and one good idea.`,
+        `Alrededor de las diez abro mi laptop y hay un mensaje de mi equipo: llegaron los números del mes pasado. Los leo dos veces. Luego me recuesto y siento la satisfacción específica de haber construido algo que funciona mientras duermo — algo real, de la nada, de la fe y una buena idea.`),
+      t(`I have a call with my team. Before it starts I check the metrics — traffic up, revenue up, last quarter beating projection. I used to dream about numbers like these, staring at a spreadsheet that had nothing in it. Now I report them. They are ordinary. That is the miracle.`,
+        `Tengo una llamada con mi equipo. Antes de que empiece reviso las métricas — tráfico arriba, ingresos arriba, el último trimestre superando la proyección. Solía soñar con números así, mirando una hoja de cálculo que no tenía nada. Ahora los reporto. Son ordinarios. Ese es el milagro.`),
+      t(`There's a decision to make today — the good kind, where all the options are good and the question is just which one is better. I make it from clarity. Not from fear, not from urgency. From the steady center of someone who built something worth protecting.`,
+        `Hay una decisión que tomar hoy — el tipo bueno, donde todas las opciones son buenas y la pregunta es solo cuál es mejor. La tomo desde la claridad. No desde el miedo, no desde la urgencia. Desde el centro estable de alguien que construyó algo que vale la pena proteger.`),
+      t(`A new client reached out today. She found me through the work. She wants to collaborate on something that actually excites me. I respond with the steadiness of someone who is no longer surprised that good things find her — someone who expects this now.`,
+        `Una clienta nueva se comunicó hoy. Me encontró a través del trabajo. Quiere colaborar en algo que genuinamente me entusiasma. Respondo con la serenidad de alguien que ya no se sorprende de que las cosas buenas la encuentren — alguien que ahora espera esto.`),
+      t(`The business grew while I wasn't panicking about it. That is something I had to learn: that my highest-leverage action is often not action at all, but trust. The numbers show that trust was warranted. They always do, eventually.`,
+        `El negocio creció mientras no me preocupaba por él. Eso es algo que tuve que aprender: que mi acción de mayor impacto a menudo no es acción en absoluto, sino confianza. Los números muestran que la confianza estaba justificada. Siempre lo hacen, eventualmente.`),
+    ]:isCreate?[
+      t(`I sit down at my work and something opens. Ideas arriving without being forced, a current of clarity that I've learned to recognize as the state I'm meant to work in. I don't push anymore. I arrive, and I receive.`,
+        `Me siento ante mi trabajo y algo se abre. Ideas que llegan sin ser forzadas, una corriente de claridad que aprendí a reconocer como el estado en que estoy destinada a trabajar. Ya no empujo. Llego, y recibo.`),
+      t(`I'm working on something I proposed to myself months ago in a journal entry I wrote half-believing. Now it exists in the world. That distance between the dream-written and the real-made is something I will never stop being amazed by.`,
+        `Estoy trabajando en algo que me propuse hace meses en una entrada de diario que escribí creyendo a medias. Ahora existe en el mundo. Esa distancia entre lo soñado-escrito y lo real-hecho es algo de lo que nunca dejaré de asombrarme.`),
+      t(`The work I do today is work I chose. Not what I took out of desperation. Not what I undercharged for to get the job. What I wanted, what lights something up in me, what I would do even if nobody was watching. That's the standard I hold now. It's the only one that matters.`,
+        `El trabajo que hago hoy es trabajo que elegí. No lo que tomé por desesperación. No lo que cobré de menos para conseguir el trabajo. Lo que quería, lo que enciende algo en mí, lo que haría incluso si nadie mirara. Ese es el estándar que mantengo ahora. Es el único que importa.`),
+      t(`Something I made is in the world, and someone is moved by it. That message arrived today — someone who found my work and needed it. This is what creating is. Not performance. Not output. Contact.`,
+        `Algo que hice está en el mundo, y alguien está conmovido por ello. Ese mensaje llegó hoy — alguien que encontró mi trabajo y lo necesitaba. Esto es lo que es crear. No actuación. No producción. Contacto.`),
+      t(`I close my laptop when I want to. Not when the work demands it, not when guilt lifts its hand — when I decide. The work has its place. I have mine, outside of it. I built both of them on purpose.`,
+        `Cierro mi laptop cuando quiero. No cuando el trabajo lo exige, no cuando la culpa levanta la mano — cuando yo decido. El trabajo tiene su lugar. Yo tengo el mío, fuera de él. Construí ambos a propósito.`),
+    ]:isPass?[
+      t(`I check the accounts the way you check the weather — briefly, without drama, as a point of information rather than a source of anxiety. The money is moving in ways I set up and left running. This is what financial peace feels like: not exciting, just steady. That steadiness is the miracle.`,
+        `Reviso las cuentas como reviso el clima — brevemente, sin drama, como un punto de información en lugar de una fuente de ansiedad. El dinero se mueve en formas que configuré y dejé correr. Así se siente la paz financiera: no emocionante, solo estable. Esa estabilidad es el milagro.`),
+      t(`Income arrived today without me lifting a particular finger for it. I note it. I keep going. I used to stop and stare at every payment that came in, incredulous. Abundance eventually becomes the expectation. That shift is everything.`,
+        `Los ingresos llegaron hoy sin que levantara un dedo particular por ello. Lo noto. Sigo. Solía detenerme y mirar cada pago que llegaba, incrédula. La abundancia eventualmente se convierte en expectativa. Ese cambio lo es todo.`),
+      t(`The money works for me while I decide what to do with today. That sentence took years to become true. I stopped believing it was too much to ask. I asked anyway. It arrived. It always eventually arrives when you stop flinching from the ask.`,
+        `El dinero trabaja para mí mientras decido qué hacer con el día de hoy. Esa frase tardó años en hacerse realidad. Dejé de creer que era demasiado pedir. Pedí de todas formas. Llegó. Siempre eventualmente llega cuando dejas de encogerte ante el pedido.`),
+      t(`Financial freedom is not a number on a statement. It is a feeling: choosing the project because it matters, not because you need it. Saying no without your hand shaking. Saying yes because you actually want to. I have that now.`,
+        `La libertad financiera no es un número en un estado de cuenta. Es una sensación: elegir el proyecto porque importa, no porque lo necesitas. Decir no sin que te tiemble la mano. Decir sí porque genuinamente quieres. Tengo eso ahora.`),
+      t(`I meet with my financial advisor. The numbers are good — better than the projection. I listen to her rundown with the calm of someone who trusts what she built. That trust was a choice I made before I had evidence. The evidence followed.`,
+        `Me reúno con mi asesora financiera. Los números son buenos — mejores que la proyección. Escucho su resumen con la calma de alguien que confía en lo que construyó. Esa confianza fue una elección que tomé antes de tener evidencia. La evidencia siguió.`),
+    ]:[
+      t(`I do work today that I believe in. The standard is mine. The schedule is mine. The choice of what I spend myself on is mine. I built that autonomy slowly and on purpose, and I protect it the same way.`,
+        `Hoy hago trabajo en el que creo. El estándar es mío. El horario es mío. La elección de en qué me gasto es mía. Construí esa autonomía lentamente y a propósito, y la protejo de la misma manera.`),
+      t(`There is an opportunity in my inbox today that I actually want. I respond without the old performing, without underselling, without apologizing in advance. This is the version of me who knows what she brings. She arrived eventually.`,
+        `Hay una oportunidad en mi bandeja de entrada hoy que genuinamente quiero. Respondo sin la vieja actuación, sin venderme de menos, sin disculparme de antemano. Esta es la versión de mí que sabe lo que aporta. Llegó eventualmente.`),
+      t(`My work reflects who I actually am — the whole version, not the edited one. There's an alignment between what I do and what I value that used to only exist in my journal. Now it's just my Tuesday.`,
+        `Mi trabajo refleja quién soy realmente — la versión completa, no la editada. Hay una alineación entre lo que hago y lo que valoro que antes solo existía en mi diario. Ahora es solo mi martes.`),
+      t(`I end the workday feeling like I gave something real and received something real in return. Not every day is extraordinary. But there's a baseline now — a floor of satisfaction that wasn't always there — and it's made of everything I decided not to compromise on.`,
+        `Termino el día de trabajo sintiéndome como si hubiera dado algo real y recibido algo real a cambio. No todos los días son extraordinarios. Pero hay un nivel base ahora — un suelo de satisfacción que no siempre estuvo — y está hecho de todo en lo que decidí no comprometerme.`),
+      t(`I close this chapter of the workday and feel something I used to have to chase: the quiet knowledge that I did enough. That I am enough. That what I made today mattered, even if only to one person, even if only to me.`,
+        `Cierro este capítulo del día de trabajo y siento algo que antes tenía que perseguir: el conocimiento tranquilo de que hice suficiente. Que soy suficiente. Que lo que hice hoy importó, aunque fuera solo para una persona, aunque fuera solo para mí.`),
+    ],
+    love: isHim?[
+      t(`He texts in the afternoon — something he saw and thought of me, nothing urgent, just a small act of thinking-of-you. I used to analyze those messages for hidden meaning. Now I just read them for what they are: a person who chooses me, again, on an ordinary Tuesday.`,
+        `Me escribe por la tarde — algo que vio y pensó en mí, nada urgente, solo un pequeño acto de pensar-en-ti. Solía analizar esos mensajes en busca de significado oculto. Ahora simplemente los leo por lo que son: una persona que me elige, de nuevo, un martes ordinario.`),
+      t(`We make dinner together. Both of us moving in the kitchen with the ease of people who have done this enough times to stop thinking about it. At some point he says something and I laugh hard, leaning against the counter. Later I think: this is exactly what I meant when I asked for love. Not the drama. This.`,
+        `Preparamos la cena juntos. Los dos moviéndonos en la cocina con la facilidad de personas que lo han hecho suficientes veces para dejar de pensarlo. En algún momento dice algo y me río fuerte, apoyándome en la mesada. Después pienso: esto es exactamente lo que quise decir cuando pedí amor. No el drama. Esto.`),
+      t(`There's something in how he looks at me that still, after all this time, makes me stop. It isn't intensity. It isn't performance. It's recognition — like he sees the version of me I was always trying to become and considers her entirely worth seeing. That's what I asked for. That's what arrived.`,
+        `Hay algo en cómo me mira que todavía, después de todo este tiempo, me detiene. No es intensidad. No es actuación. Es reconocimiento — como si viera la versión de mí que siempre intenté convertirme y la considerara completamente digna de ser vista. Eso es lo que pedí. Eso es lo que llegó.`),
+      t(`He calls in the evening just to hear how my day went. Not because something happened. Not because he needs anything. Just because he wants to know. The simplicity of that — being wanted, being checked in on, being thought of — is something I spent years believing I was asking for too much. I wasn't.`,
+        `Llama por la tarde solo para escuchar cómo me fue en el día. No porque haya pasado algo. No porque necesite algo. Solo porque quiere saber. La simplicidad de eso — ser querida, ser consultada, ser pensada — es algo en lo que pasé años creyendo que pedía demasiado. No lo era.`),
+      t(`There is a moment tonight that I will not be able to describe if someone asks me about it tomorrow. Both of us quiet. Something good playing softly. The particular warmth of a room that holds two people who chose each other. I think: there is nowhere I would rather be. I think it without drama or qualification. Just: this.`,
+        `Hay un momento esta noche que no podré describir si alguien me pregunta al respecto mañana. Los dos en silencio. Algo bueno sonando suavemente. El calor particular de una habitación que sostiene a dos personas que se eligieron. Pienso: no hay ningún lugar donde prefiera estar. Lo pienso sin drama ni calificaciones. Solo: esto.`),
+    ]:isSelf?[
+      t(`I notice, mid-afternoon, that I'm not performing. Not adjusting how I hold my face, not monitoring how I'm being received, not shrinking to make the room more comfortable. I'm just here. Fully, without apology. This is what years of choosing myself accumulated into: presence.`,
+        `Noto, a media tarde, que no estoy actuando. No ajustando cómo sostengo mi cara, no monitoreando cómo me están recibiendo, no encogiéndome para hacer la sala más cómoda. Solo estoy aquí. Completamente, sin disculpas. En esto se acumularon años de elegirme: presencia.`),
+      t(`I say what I mean in a conversation today — without softening it down to nothing first, without the old reflexive apology that used to come before every true thing I said. The woman who speaks clearly and takes up space is not new. She was always there. I just stopped apologizing for her.`,
+        `Digo lo que quiero decir en una conversación hoy — sin suavizarlo hasta la nada primero, sin la vieja disculpa reflexiva que solía venir antes de cada cosa verdadera que decía. La mujer que habla con claridad y ocupa espacio no es nueva. Siempre estuvo. Solo dejé de disculparme por ella.`),
+      t(`There's a steadiness in how I move through the world now that I had to build from scratch. It looks like confidence from the outside. From the inside it's simpler than that: I just know what I want, and I know what I won't accept, and I stopped pretending those things were the same.`,
+        `Hay una firmeza en cómo me muevo por el mundo ahora que tuve que construir desde cero. Parece confianza desde afuera. Desde adentro es más simple que eso: solo sé lo que quiero, y sé lo que no aceptaré, y dejé de pretender que esas cosas eran lo mismo.`),
+      t(`I look in the mirror and I'm not searching for things to fix. I see the face that carried me through everything — the doubt and the decision and the long years and the arrival. I feel something close to gratitude for it. Not pride. Gratitude.`,
+        `Me miro en el espejo y no estoy buscando cosas para arreglar. Veo la cara que me cargó por todo — la duda y la decisión y los largos años y la llegada. Siento algo cercano a la gratitud por ella. No orgullo. Gratitud.`),
+      t(`The people around me now show up. That's the whole thing — they just show up. I built that by becoming someone who only made room for people who would. Not as a strategy. As a standard. Standards change everything.`,
+        `Las personas a mi alrededor ahora se presentan. Eso es todo — simplemente se presentan. Lo construí convirtiéndome en alguien que solo hacía espacio para personas que lo harían. No como estrategia. Como estándar. Los estándares cambian todo.`),
+    ]:[
+      t(`Love shows up in the texture of the day — not in grand gestures but in the particular quality of attention, of being known, of mattering to someone in the specific and irreplaceable way that only comes from time. I have that now. In the people I chose and who chose me back.`,
+        `El amor aparece en la textura del día — no en grandes gestos sino en la calidad particular de la atención, de ser conocida, de importarle a alguien de la manera específica e irremplazable que solo viene del tiempo. Tengo eso ahora. En las personas que elegí y que me eligieron a mí.`),
+      t(`The people around me now have staying power. This was not always true. I spent years in proximity to people who were always almost present, always almost committed. I renegotiated all of that, quietly and completely. The room is smaller now and entirely full.`,
+        `Las personas a mi alrededor ahora tienen poder de permanencia. Esto no siempre fue así. Pasé años en proximidad a personas que siempre estaban casi presentes, siempre casi comprometidas. Renegocié todo eso, silenciosa y completamente. La sala es más pequeña ahora y está completamente llena.`),
+      t(`A conversation today went somewhere real. Not small talk routed through performance — actual contact, actual knowing. I walked away feeling the specific and increasingly rare gift of being genuinely seen by another person. I don't take it for granted anymore.`,
+        `Una conversación hoy llegó a algún lugar real. No charla banal a través de la actuación — contacto real, conocimiento real. Me alejé sintiendo el regalo específico y cada vez más raro de ser genuinamente vista por otra persona. Ya no lo doy por sentado.`),
+      t(`I am surrounded by love of many kinds. The kind that shows up in a message sent mid-morning just because. The kind that means someone has my back in a room I'm not in. The kind that means someone makes space for me exactly as I am and expects nothing different.`,
+        `Estoy rodeada de amor de muchos tipos. El tipo que aparece en un mensaje enviado a media mañana porque sí. El tipo que significa que alguien me respalda en una sala en la que no estoy. El tipo que significa que alguien me hace espacio exactamente como soy y no espera nada diferente.`),
+      t(`Love was something I used to receive in fragments. A little here, contingent on something, withdrawn without warning. I rebuilt my entire life so that wasn't the case anymore. The love in it now is steady, chosen, real. It took everything. It was worth everything.`,
+        `El amor era algo que solía recibir en fragmentos. Un poco aquí, contingente en algo, retirado sin advertencia. Reconstruí toda mi vida para que eso ya no fuera el caso. El amor en ella ahora es estable, elegido, real. Lo costó todo. Valió todo.`),
+    ],
+    evening:[
+      t(`At the end of the day I settle. This sounds simple and it took years. I sit in my space without cataloguing what I didn't finish. I let the day have been what it was. ${feel?`I feel ${feel}.`:"I feel complete."} I will meet tomorrow when it comes.`,
+        `Al final del día me asiento. Esto suena simple y tardó años. Me siento en mi espacio sin catalogar lo que no terminé. Dejo que el día haya sido lo que fue. ${feel?`Me siento ${feel}.`:"Me siento completa."} Me encontraré con mañana cuando llegue.`),
+      t(`The evening belongs to me in a different way than the morning does. More earned. More quiet. I move through it without rush, tending to small things — a meal, a conversation, something beautiful to read — and feel the specific satisfaction of a day that added up to something.`,
+        `La tarde me pertenece de una manera diferente a como lo hace la mañana. Más ganada. Más tranquila. Me muevo por ella sin prisa, atendiendo cosas pequeñas — una comida, una conversación, algo hermoso para leer — y siento la satisfacción específica de un día que sumó algo.`),
+      t(`I think, before bed, about what I want tomorrow to feel like. Not what I need to accomplish. How I want to feel when I'm inside it. That question used to seem like a luxury. Now I understand it's the strategy.`,
+        `Pienso, antes de dormir, en cómo quiero que se sienta mañana. No qué necesito lograr. Cómo quiero sentirme cuando esté dentro de él. Esa pregunta solía parecer un lujo. Ahora entiendo que es la estrategia.`),
+      t(`There's quiet in this evening. Not the quiet of things being wrong or missing — the quiet of enough. Of a day complete. Of a life that is building toward something and also already, in this moment, entirely here.`,
+        `Hay quietud en esta tarde. No la quietud de que las cosas están mal o faltando — la quietud de suficiente. De un día completo. De una vida que se construye hacia algo y que también ya, en este momento, está completamente aquí.`),
+      t(`I put the phone down at a certain hour and let the evening be analog. Present. I notice small things — the quality of the light, the temperature of the room, the sound outside. The practice of noticing is the practice of gratitude. Both are the practice of being alive.`,
+        `Pongo el teléfono a una cierta hora y dejo que la tarde sea análoga. Presente. Noto cosas pequeñas — la calidad de la luz, la temperatura de la habitación, el sonido afuera. La práctica de notar es la práctica de la gratitud. Ambas son la práctica de estar vivo.`),
+    ],
+    closing:[
+      t(`I fall asleep without going over the things I didn't finish. The list exists and it will be there tomorrow and I will meet it then. Tonight I just let the day close. I let myself be a body in a bed in a life that fits, and I rest.`,
+        `Me duermo sin repasar las cosas que no terminé. La lista existe y estará allí mañana y la encontraré entonces. Esta noche simplemente dejo que el día cierre. Me dejo ser un cuerpo en una cama en una vida que encaja, y descanso.`),
+      t(`Before I close my eyes I have a thought I've had for a while now: I am not waiting for my life to start. It started. This is it — right now, exactly this — and I don't want to spend it looking ahead at what I'm still waiting for.`,
+        `Antes de cerrar los ojos tengo un pensamiento que he tenido por un tiempo: no estoy esperando que mi vida empiece. Empezó. Es esto — ahora mismo, exactamente esto — y no quiero pasarla mirando hacia adelante a lo que todavía espero.`),
+      t(`I say a prayer before I sleep. Not from desperation — I gave that up when I realized the desperation was coming from a belief that I hadn't been heard. I've been heard. The evidence is this day. So I say thank you instead.`,
+        `Digo una oración antes de dormir. No desde la desesperación — renuncié a eso cuando me di cuenta de que la desesperación venía de una creencia de que no había sido escuchada. He sido escuchada. La evidencia es este día. Así que digo gracias en cambio.`),
+      t(`This life — its particular weight and texture and color, the way it smells and sounds and feels in my body — is the one I asked for. Not exactly. Better than exactly. I asked for something and something better arrived. That keeps happening. I've stopped being surprised.`,
+        `Esta vida — su peso particular y textura y color, cómo huele y suena y se siente en mi cuerpo — es la que pedí. No exactamente. Mejor que exactamente. Pedí algo y llegó algo mejor. Eso sigue sucediendo. He dejado de sorprenderme.`),
+      t(`I close my eyes and somewhere below thought there is something like: this is mine. Not claimed. Not held tight. Just: mine. Like the way a body belongs to itself. Like the way the night belongs to sleep. Quietly, completely, mine.`,
+        `Cierro los ojos y en algún lugar debajo del pensamiento hay algo como: esto es mío. No reclamado. No sostenido con fuerza. Solo: mío. Como la forma en que un cuerpo pertenece a sí mismo. Como la forma en que la noche pertenece al sueño. Silenciosamente, completamente, mío.`),
+    ],
+  };
+}
+
+function genStory(a,lang,slot=0){
+  const b=buildBanks(a,lang);
+  const p=(arr,off)=>arr[(slot+off)%arr.length];
+  return [p(b.wake,0),p(b.home,1),p(b.morn,2),p(b.work,3),p(b.love,4),p(b.evening,2),p(b.closing,3)].join("\n\n");
+}
+
+const TITLES_EN=[
+  "The Woman Who Decided to Believe",
+  "Everything She Touched Turned to Gold",
+  "She Did Not Wait to Be Chosen",
+  "A Life Too Beautiful to Have Been an Accident",
+  "The Quiet Arrival of Everything She Asked For",
+  "She Prayed It. She Built It. She Lived It.",
+  "The Morning After She Stopped Doubting",
+  "Abundance Was Always Going to Find Her",
+  "The Version of Her That Made It",
+  "She Already Knew How This Story Ended",
+];
+const TITLES_ES=[
+  "La Mujer Que Decidió Creer",
+  "Todo Lo Que Tocó Se Convirtió en Oro",
+  "Ella No Esperó a Ser Elegida",
+  "Una Vida Demasiado Hermosa Para Ser un Accidente",
+  "La Llegada Silenciosa de Todo Lo Que Pidió",
+  "Lo Oró. Lo Construyó. Lo Vivió.",
+  "La Mañana Después de Que Dejó de Dudar",
+  "La Abundancia Siempre Iba a Encontrarla",
+  "La Versión de Ella Que Lo Logró",
+  "Ella Ya Sabía Cómo Terminaba Esta Historia",
+];
+function genTitle(a,lang,slot=0){
+  const p=lang==="es"?TITLES_ES:TITLES_EN;
+  const v=a.vision||"";
+  const hasHim=has(a.love||v,"partner","husband","him","roger","married","él","pareja","esposo","novio","casada");
+  const hasBrand=has(a.career||v,"brand","business","founder","ceo","marca","negocio","empresa");
+  const hasHigh=has(a.home||"","penthouse","loft","piso","alto","tower","sky","floor");
+  const hasSea=has(a.home||"","beach","sea","ocean","playa","mar","villa","bali","island","costa");
+  const hasPassive=has(a.career||v,"passive","invest","income","portfolio","pasivo","invert");
+  const hasCreate=has(a.career||v,"creat","design","art","write","photo","studio","music");
+
+  if(slot===0){
+    if(hasHigh)   return lang==="es"?"La Vista Desde la Vida Que Construí":"The View From the Life She Built";
+    if(hasSea)    return lang==="es"?"El Mar Que Siempre Supo Que Era Para Ella":"The Sea That Always Knew It Was Hers";
+    return lang==="es"?"Llegando a Casa en Su Vida Soñada":"Coming Home to Her Dream Life";
+  }
+  if(slot===1){
+    if(hasHim)    return lang==="es"?"El Amor Que Supo Que Era Ella":"The Love That Knew It Was Her";
+    if(isSelf2(a.love||"")) return lang==="es"?"La Mujer Que Se Eligió a Sí Misma":"The Woman Who Chose Herself";
+    return lang==="es"?"Rodeada del Amor Que Siempre Mereció":"Surrounded by the Love She Always Deserved";
+  }
+  if(slot===2){
+    if(hasBrand)  return lang==="es"?"El Día en Que los Números Le Dieron la Razón":"The Day the Numbers Proved Her Right";
+    if(hasPassive)return lang==="es"?"El Dinero Que Trabaja Mientras Ella Descansa":"The Money That Works While She Rests";
+    if(hasCreate) return lang==="es"?"Creando Desde la Abundancia, No Desde el Miedo":"Creating From Abundance, Not From Fear";
+    return lang==="es"?"La Carrera Que Siempre Se Mereció":"The Career She Always Deserved";
+  }
+  return p[slot%p.length];
+}
+function isSelf2(s){return has(s,"myself","self","worth","deserve","confianza","autoestima","yo misma");}
+
+/* ─── Bible Verses ───────────────────────────────────────────── */
+const BV={en:{love:[{ref:"Song of Solomon 3:4",text:"I have found the one whom my soul loves.",note:"The love meant for you recognizes you. And you it."}],money:[{ref:"Philippians 4:19",text:"My God will supply every need of yours according to his riches in glory.",note:"Provision is not something you chase. It is something promised to you."}],healing:[{ref:"Jeremiah 30:17",text:"I will restore health to you, and your wounds I will heal.",note:"Restoration is already underway, even where you cannot see it yet."}],purpose:[{ref:"Jeremiah 29:11",text:"I know the plans I have for you — plans to prosper you and not to harm you.",note:"The future you are reaching for is already prepared for you."}],default:[{ref:"Psalm 37:4",text:"Delight yourself in the Lord, and he will give you the desires of your heart.",note:"Your deepest desires were placed in you on purpose."}]},es:{love:[{ref:"Cantares 3:4",text:"Hallé al que ama mi alma.",note:"El amor destinado para ti te reconoce. Y tú a él."}],money:[{ref:"Filipenses 4:19",text:"Mi Dios suplirá todo lo que os falta conforme a sus riquezas en gloria.",note:"La provisión no se persigue. Se te promete."}],healing:[{ref:"Jeremías 30:17",text:"Te restauraré la salud y sanaré tus heridas.",note:"La restauración ya está en marcha, aunque aún no puedas verla."}],purpose:[{ref:"Jeremías 29:11",text:"Yo sé los planes que tengo para vosotros — planes de bienestar y no de mal.",note:"El futuro que anhelas ya está preparado para ti."}],default:[{ref:"Salmos 37:4",text:"Deléitate en el Señor, y él te concederá los deseos de tu corazón.",note:"Tus deseos más profundos fueron puestos en ti a propósito."}]}};
+function pickVerse(a,lang){const db=BV[lang]||BV.en;const t=Object.values(a).join(" ").toLowerCase();let cat="default";if(/love|partner|marriage|romance|él|pareja|esposo|novio|amor|roger/.test(t))cat="love";else if(/money|wealth|financ|income|abundan|business|dinero|negocio/.test(t))cat="money";else if(/heal|health|pain|sick|salud|sanar/.test(t))cat="healing";else if(/purpose|calling|propósito|llamado/.test(t))cat="purpose";return(db[cat]||db.default)[0];}
+
+/* ─── Affirmations by goal ──────────────────────────────────── */
+const AFFS={en:{love:["I am worthy of deep, devoted, chosen love.","Love finds me because I no longer hide from it.","I attract the love that is meant for me — healthy, safe, and real.","I am in a relationship that feels like home.","I give and receive love with equal ease and fullness."],money:["Abundance flows to me from expected and unexpected sources.","I am someone money moves toward easily.","My financial peace is built on trust, not fear.","I earn well, save wisely, and give generously.","Wealth is my natural state. I return to it."],career:["My work is an expression of my highest self.","Opportunities find me because I've made myself findable.","I lead from clarity, not fear.","My success is inevitable. I show up for it.","I am in the room I always imagined being in."],default:["I am already the woman I'm becoming.","Everything I desire is flowing toward me now.","Peace is my natural state. I return to it daily.","I trust the timing of my life completely.","The version of me who has it all is not far. She is next."]},es:{love:["Soy digna de amor profundo, devoto y elegido.","El amor me encuentra porque ya no me escondo de él.","Atraigo el amor que es para mí — saludable, seguro y real.","Estoy en una relación que se siente como casa.","Doy y recibo amor con igual facilidad y plenitud."],money:["La abundancia fluye hacia mí de fuentes esperadas e inesperadas.","Soy alguien hacia quien el dinero se mueve fácilmente.","Mi paz financiera está construida en confianza, no en miedo.","Gano bien, ahorro sabiamente y doy generosamente.","La riqueza es mi estado natural. Regreso a ella."],career:["Mi trabajo es una expresión de mi yo más elevado.","Las oportunidades me encuentran porque me he hecho encontrable.","Lidero desde la claridad, no desde el miedo.","Mi éxito es inevitable. Me presento para él.","Estoy en la sala que siempre imaginé estar."],default:["Ya soy la mujer en quien me estoy convirtiendo.","Todo lo que deseo fluye hacia mí ahora.","La paz es mi estado natural. Regreso a ella diariamente.","Confío completamente en el tiempo de mi vida.","La versión de mí que lo tiene todo no está lejos. Es la siguiente."]}};
+function getAffsByGoal(a,lang){const db=AFFS[lang]||AFFS.en;const t=Object.values(a).join(" ").toLowerCase();if(/love|partner|romance|él|pareja|novio|amor/.test(t))return db.love;if(/money|financ|income|abundan|dinero|negocio/.test(t))return db.money;if(/career|brand|business|ceo|marca|trabajo/.test(t))return db.career;return db.default;}
+
+/* ─── Prayers ─────────────────────────────────────────────── */
+const PRS={en:{morning:`Father, as I open my eyes to this day, I align my heart with the life You've already prepared for me. I release every doubt, every voice that tells me this is too much to ask. It isn't. You said ask. I'm asking. I receive this day with open hands. Thank you. Amen.`,evening:`Lord, as this day closes, I release it into Your hands. Whatever moved, moved. Whatever didn't — will. Your timing is not mine to rush. Thank you for the evidence already visible: the alignment, the doors that opened, the love that showed up in small ways. I rest tonight knowing my manifestation is not a wish. It's a promise already in motion. Amen.`,belief:`God, I confess that today belief is difficult. The doubt is louder than the vision. I ask You to bridge that gap — not because I have perfect faith, but because You said a mustard seed is enough. Take my small yes and multiply it. Let me feel, in one moment today, that this is real. Amen.`,abundance:`Father, I open my hands and heart to receive abundantly — not to hoard, but to serve and live fully. Abundance is not selfish. A woman thriving can pour into others. Align my finances, opportunities, and relationships with Your highest plan. I trust that asking for more is not asking for too much. It is Your original design. Amen.`,love:`Lord, I pray for the love that is already on its way to me. Let it find me whole, not desperate. Guard my heart from settling. Prepare me to receive what is real, deep, chosen, and safe — and let me love that person, and myself, with everything I have. Amen.`},es:{morning:`Padre, al abrir mis ojos a este día, alinéo mi corazón con la vida que ya preparaste para mí. Suelto cada duda, cada voz que me dice que esto es pedir demasiado. No lo es. Dijiste pide. Estoy pidiendo. Recibo este día con las manos abiertas. Gracias. Amén.`,evening:`Señor, al cerrar este día, lo suelto en Tus manos. Lo que se movió, se movió. Lo que no — se moverá. Tu tiempo no es mío para apresurar. Gracias por la evidencia ya visible: la alineación, las puertas que se abrieron, el amor que apareció en pequeñas formas. Descanso esta noche sabiendo que mi manifestación no es un deseo. Es una promesa ya en movimiento. Amén.`,belief:`Dios, confieso que hoy la creencia es difícil. La duda es más fuerte que la visión. Te pido que cierres esa brecha — no porque tenga fe perfecta, sino porque dijiste que con una semilla de mostaza es suficiente. Toma mi pequeño sí y multiplícalo. Déjame sentir, en un momento hoy, que esto es real. Amén.`,abundance:`Padre, abro mis manos y corazón para recibir abundantemente — no para acumular, sino para servir y vivir plenamente. La abundancia no es egoísta. Una mujer que prospera puede dar a otros. Alinea mis finanzas, oportunidades y relaciones con Tu plan más alto. Confío en que pedir más no es pedir demasiado. Es Tu diseño original. Amén.`,love:`Señor, oro por el amor que ya viene hacia mí. Que me encuentre entera, no desesperada. Guarda mi corazón de conformarse. Prepárame para recibir lo que es real, profundo, elegido y seguro — y déjame amar a esa persona, y a mí misma, con todo lo que tengo. Amén.`}};
+
+/* ─── Meditations ─────────────────────────────────────────── */
+const MEDS={en:[{title:"Morning Alignment",dur:"5 min",t:"close_eyes",script:"Close your eyes. Breathe in for four counts, hold for four, release for four. You are beginning again. Feel the new day arriving not as a demand but as an invitation. Place one hand on your chest and notice your heartbeat — steady, present, alive. You are already enough for everything this day will ask. Breathe into that truth. Let it settle below the words."},
+{title:"Abundance Visualization",dur:"8 min",t:"visualize",script:"Close your eyes and breathe slowly. Picture yourself two years from now. Where are you? Notice the room around you — the light, the temperature, the objects that tell the story of the life you built. Watch yourself move through a morning in that life. Notice how you carry yourself. The ease. The certainty. The quiet joy. Now notice: she is not far from you. She is a decision already made. You are walking toward her, and she is waiting, and when you arrive she will simply say: I knew you were coming."},
+{title:"Future Self Meeting",dur:"10 min",t:"visualize",script:"Settle your breath. Imagine yourself walking toward a door. On the other side of this door is the version of you who already has everything you're calling in. You open it. She is there. Look at her — really look. Notice how she holds herself. The calm. The fullness. She smiles because she remembers being exactly where you are, and she knows how this ends. She hands you something — a feeling, a knowing, a word. Whatever she gives you, take it. Carry it back through the door. It belongs to you now."},
+{title:"Evening Release",dur:"6 min",t:"release",script:"Lie down. Let your hands rest open. Begin to soften, starting from your face — your jaw, your eyes, the space between your eyebrows. Soften your shoulders. Soften your chest. Release the day. Not because it's over, but because you're allowed to put it down now. Whatever didn't happen today is not evidence against you. It is just: not yet. And not yet is not never. Rest here. You are safe. You are held. You are enough."},
+{title:"Self-Love Ritual",dur:"5 min",t:"body",script:"Place both hands on your heart. Feel the warmth of your own hands. This body has carried you through everything — every hard day, every doubt, every version of yourself you had to leave behind to become this one. Honor it. Not for what it looks like. For what it does. For what it has endured. For the way it keeps showing up for you even when you haven't shown up for it. You are worthy of your own tenderness. Start here."}],
+es:[{title:"Alineación Matutina",dur:"5 min",t:"close_eyes",script:"Cierra los ojos. Respira cuatro tiempos, sostén cuatro, suelta cuatro. Estás empezando de nuevo. Siente el nuevo día llegando no como una demanda sino como una invitación. Pon una mano en tu pecho y nota tu latido — estable, presente, vivo. Ya eres suficiente para todo lo que este día pedirá. Respira hacia esa verdad. Deja que se asiente debajo de las palabras."},
+{title:"Visualización de Abundancia",dur:"8 min",t:"visualize",script:"Cierra los ojos y respira despacio. Imagínate dos años en el futuro. ¿Dónde estás? Nota la habitación a tu alrededor — la luz, la temperatura, los objetos que cuentan la historia de la vida que construiste. Mírarte moverte por una mañana en esa vida. Nota cómo te llevas. La facilidad. La certeza. La alegría tranquila. Nota ahora: ella no está lejos de ti. Es una decisión ya tomada. Caminas hacia ella, y ella espera, y cuando llegues simplemente dirá: sabía que venías."},
+{title:"Encuentro con tu Yo Futuro",dur:"10 min",t:"visualize",script:"Asienta tu respiración. Imagínate caminando hacia una puerta. Al otro lado de esta puerta está la versión de ti que ya tiene todo lo que estás llamando. La abres. Ella está ahí. Mírala — realmente mírala. Nota cómo se sostiene. La calma. La plenitud. Sonríe porque recuerda estar exactamente donde estás tú, y sabe cómo termina esto. Te entrega algo — un sentimiento, un saber, una palabra. Lo que sea que te dé, tómalo. Llévalo de vuelta por la puerta. Te pertenece ahora."},
+{title:"Liberación Nocturna",dur:"6 min",t:"release",script:"Acuéstate. Deja tus manos descansar abiertas. Empieza a suavizarte, comenzando por tu cara — tu mandíbula, tus ojos, el espacio entre tus cejas. Suaviza tus hombros. Suaviza tu pecho. Suelta el día. No porque haya terminado, sino porque te está permitido ponerlo abajo ahora. Lo que no sucedió hoy no es evidencia en tu contra. Es simplemente: aún no. Y aún no no es nunca. Descansa aquí. Estás a salvo. Estás sostenida. Eres suficiente."},
+{title:"Ritual de Amor Propio",dur:"5 min",t:"body",script:"Pon ambas manos en tu corazón. Siente el calor de tus propias manos. Este cuerpo te ha cargado por todo — cada día difícil, cada duda, cada versión de ti misma que tuviste que dejar atrás para convertirte en esta. Hónralo. No por cómo se ve. Por lo que hace. Por lo que ha soportado. Por la forma en que sigue presentándose para ti incluso cuando tú no te has presentado para él. Eres digna de tu propia ternura. Empieza aquí."}]};
+
+/* ─── Journal Prompts ──────────────────────────────────────── */
+const JOURNALS={en:["What does your dream life feel like in your body right now — not in your head, in your body?","Write a letter from your future self. She's looking back at this moment. What does she say?","What would you do differently today if you knew your manifestation was already confirmed?","Describe the version of you who already has everything. How does she walk into a room?","What story about yourself are you finally ready to stop telling?","What has already shifted that you haven't given yourself full credit for?"],es:["¿Cómo se siente tu vida soñada en tu cuerpo ahora mismo — no en tu cabeza, en tu cuerpo?","Escribe una carta de tu yo futuro. Ella está mirando hacia atrás a este momento. ¿Qué dice?","¿Qué harías diferente hoy si supieras que tu manifestación ya está confirmada?","Describe la versión de ti que ya tiene todo. ¿Cómo entra ella a una habitación?","¿Qué historia sobre ti misma finalmente estás lista para dejar de contar?","¿Qué ya ha cambiado que no te has dado pleno crédito?"]};
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARED COMPONENTS — Buttercream + Pink Icing aesthetic */
+function Btn({label,onClick,disabled,variant,small}){
+  const v=variant||"primary";
+  const base={border:"none",borderRadius:50,fontFamily:SF,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,cursor:disabled?"default":"pointer"};
+  const styles={
+    primary:{...base,background:disabled?`rgba(248,220,130,0.45)`:`linear-gradient(135deg,${P.butter},${P.butterD})`,padding:small?"9px 20px":"13px 26px",fontSize:small?10:11,letterSpacing:"0.2em",textTransform:"uppercase",color:P.ink,fontWeight:500,boxShadow:disabled?"none":"0 4px 16px rgba(245,220,130,0.45)",opacity:disabled?0.6:1},
+    pink:{...base,background:disabled?`rgba(240,184,192,0.45)`:`linear-gradient(135deg,${P.pink},${P.pinkD})`,padding:small?"9px 20px":"13px 26px",fontSize:small?10:11,letterSpacing:"0.2em",textTransform:"uppercase",color:P.white,fontWeight:500,boxShadow:disabled?"none":"0 4px 16px rgba(240,184,192,0.45)",opacity:disabled?0.6:1},
+    dark:{...base,background:disabled?"rgba(30,18,8,0.45)":P.ink,padding:"18px 24px",fontSize:15,fontWeight:500,color:P.butterL,width:"100%",letterSpacing:"0.03em",opacity:disabled?0.5:1},
+    outline:{...base,background:"rgba(255,255,255,0.72)",border:`1.5px solid ${P.borderP}`,padding:small?"8px 18px":"11px 22px",fontSize:small?10:11,letterSpacing:"0.18em",textTransform:"uppercase",color:P.pinkD,boxSizing:"border-box"},
+    ghost:{...base,background:"none",border:"none",padding:small?"8px 14px":"10px 16px",fontSize:small?11:12,color:P.muted,letterSpacing:"0.12em",textTransform:"uppercase"},
+  };
+  return <button onClick={onClick} disabled={disabled} style={styles[v]||styles.primary}>{label}</button>;
+}
+function Card({children,style,gradient}){
+  return <div style={{background:gradient?P.cardGrad:P.white,borderRadius:22,padding:20,marginBottom:12,boxShadow:"0 2px 20px rgba(245,220,130,0.15),0 1px 6px rgba(240,184,192,0.12)",border:`1px solid ${P.border}`,...(style||{})}}>{children}</div>;
+}
+function PinkCard({children,style}){
+  return <div style={{background:`linear-gradient(135deg,${P.pinkL},#fff8f9)`,borderRadius:22,padding:20,marginBottom:12,border:`1px solid ${P.borderP}`,boxShadow:"0 2px 18px rgba(240,184,192,0.18)",...(style||{})}}>{children}</div>;
+}
+function YellowCard({children,style}){
+  return <div style={{background:`linear-gradient(135deg,${P.butterL},#fffde8)`,borderRadius:22,padding:20,marginBottom:12,border:`1px solid ${P.border}`,boxShadow:"0 2px 18px rgba(245,220,130,0.22)",...(style||{})}}>{children}</div>;
+}
+function Chip({label,active,onClick}){
+  return <button onClick={onClick} style={{background:active?P.butter:"rgba(255,255,255,0.80)",border:`1.5px solid ${active?P.butterD:P.border}`,borderRadius:20,padding:"7px 16px",fontSize:12,color:active?P.ink:P.body,fontFamily:PF,fontStyle:"italic",whiteSpace:"nowrap",transition:"all 0.2s",boxShadow:active?"0 2px 12px rgba(245,220,130,0.35)":"none"}}>{label}</button>;
+}
+function SegBar({pct,n=12}){
+  const f=Math.round(pct/100*n);
+  return <div style={{display:"flex",gap:3,marginBottom:0}}>
+    {Array.from({length:n}).map((_,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<f?`linear-gradient(90deg,${P.butter},${P.pink})`:"rgba(245,220,130,0.25)",transition:"background 0.3s"}}/>)}
+  </div>;
+}
+function GLabel({children,pink}){return <p style={{fontSize:10,letterSpacing:"0.38em",textTransform:"uppercase",color:pink?P.pinkD:P.butterD,margin:"0 0 10px",fontFamily:SF}}>{children}</p>;}
+function Spin(){return <span style={{display:"inline-block",width:14,height:14,border:`2px solid rgba(245,220,130,0.38)`,borderTopColor:P.butterD,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>;}
+function Orb({size=200}){
+  return <div className="orb-idle" style={{width:size,height:size,borderRadius:"50%",position:"relative",margin:"0 auto",background:`radial-gradient(ellipse at 30% 28%,rgba(255,248,220,0.98) 0%,rgba(251,240,178,0.88) 22%,rgba(245,220,130,0.72) 46%,rgba(240,184,192,0.60) 68%,rgba(232,148,160,0.45) 100%)`,boxShadow:`0 10px 50px rgba(245,220,130,0.42),inset 0 4px 18px rgba(255,255,255,0.68),inset -5px -5px 24px rgba(240,184,192,0.22)`}}>
+    <div style={{position:"absolute",top:"17%",left:"20%",width:"30%",height:"16%",borderRadius:"50%",background:"rgba(255,255,255,0.68)",filter:"blur(6px)",transform:"rotate(-18deg)"}}/>
+    <div style={{position:"absolute",top:"58%",left:"64%",width:"13%",height:"9%",borderRadius:"50%",background:"rgba(255,255,255,0.42)",filter:"blur(3px)"}}/>
+  </div>;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ONBOARDING
+   Phase flow: langPick → intro → name → pronouns → dob →
+               vision → belief → blocks → yourWords →
+               practiceTime → notifications */
+const OB_PH=["langPick","intro","name","pronouns","dob","vision","belief","blocks","yourWords","practiceTime","notifications"];
+
+function ObBar({pct}){return <div style={{height:3,background:`rgba(245,220,130,0.25)`,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${P.butter},${P.pink})`,transition:"width 0.5s ease",borderRadius:2}}/></div>;}
+function ObFrame({children,pct,onBack,dark}){
+  return <div style={{minHeight:"100vh",background:dark?"#1A1208":P.ivory,display:"flex",flexDirection:"column",position:"relative"}}>
+    <style>{G}</style>
+    {pct>0&&<ObBar pct={pct}/>}
+    {onBack&&<button onClick={onBack} style={{position:"absolute",top:20,left:20,background:"none",border:"none",fontSize:11,letterSpacing:"0.2em",color:dark?"rgba(251,240,178,0.55)":P.muted,fontFamily:SF,textTransform:"uppercase",display:"flex",alignItems:"center",gap:4,zIndex:10}}>‹ BACK</button>}
+    {children}
+  </div>;
+}
+function ObInput({ph,value,onChange,onEnter,iRef,type="text",hint}){
+  return <div style={{position:"relative"}}>
+    <input ref={iRef} type={type} style={{width:"100%",background:P.white,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:hint?"15px 80px 15px 20px":"15px 20px",fontSize:16,color:P.ink,fontFamily:PF,fontStyle:"italic",boxShadow:"0 2px 16px rgba(245,220,130,0.12)",outline:"none",boxSizing:"border-box"}} placeholder={ph} value={value} onChange={e=>onChange(e.target.value)} onKeyDown={e=>e.key==="Enter"&&value.trim()&&onEnter&&onEnter()}/>
+    {hint&&<span style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",fontSize:9,letterSpacing:"0.25em",color:P.muted,fontFamily:SF,textTransform:"uppercase"}}>{hint}</span>}
+  </div>;
+}
+function ObChoice({label,selected,onClick,serif=true}){
+  return <button onClick={onClick} style={{width:"100%",background:selected?P.ink:P.white,border:selected?"none":`1px solid ${P.border}`,borderRadius:18,padding:"17px 20px",fontSize:17,color:selected?P.butterL:P.ink,fontFamily:serif?PF:SF,fontStyle:serif?"italic":"normal",textAlign:"left",marginBottom:10,boxShadow:selected?"0 4px 16px rgba(30,18,8,0.15)":"0 1px 10px rgba(245,220,130,0.10)",transition:"all 0.15s"}}>{label}</button>;
+}
+
+function OnboardingScreen({onComplete,onSkip,existingProfile}){
+  const ep = existingProfile || {};
+  const [idx,setIdx]=useState(existingProfile ? 1 : 0); /* skip langPick if editing */
+  const [lang,setLang]=useState(ep.lang||"en");
+  const [name,setName]=useState(ep.name||"");
+  const [pronouns,setPronouns]=useState(ep.pronouns||"");
+  const [dob,setDob]=useState(ep.dob||"");
+  const [vision,setVision]=useState(ep.vision||"");
+  const [belief,setBelief]=useState(ep.belief!=null?ep.belief:null);
+  const [blocks,setBlocks]=useState(new Set(ep.blocks||[]));
+  const [practiceTime,setPracticeTime]=useState(ep.practiceTime||"7:00 AM");
+  const iRef=useRef(null);
+  const stateRef=useRef({});
+
+  const phase=OB_PH[Math.min(idx,OB_PH.length-1)];
+  const next=()=>setIdx(i=>Math.min(i+1,OB_PH.length));
+  const back=()=>setIdx(i=>Math.max(0,i-1));
+  const pct=Math.round((idx/OB_PH.length)*100);
+
+  useEffect(()=>{ stateRef.current={lang,name,pronouns,dob,vision,belief,blocks:[...blocks],practiceTime}; });
+  /* Auto-save partial progress to localStorage so nothing is lost */
+  useEffect(()=>{
+    if(name||vision) {
+      const partial = {lang,name,pronouns,dob,vision,belief,blocks:[...blocks],practiceTime};
+      try { localStorage.setItem(`celeste_partial_${lang}`, JSON.stringify(partial)); } catch {}
+    }
+  },[lang,name,vision,pronouns,dob,belief,practiceTime]);
+  useEffect(()=>{
+    if(["name","vision","dob"].includes(phase)) setTimeout(()=>iRef.current&&iRef.current.focus(),350);
+  },[phase]);
+  useEffect(()=>{
+    if(idx>=OB_PH.length){
+      const s=stateRef.current;
+      onComplete({lang:s.lang,name:s.name,pronouns:s.pronouns,dob:s.dob,vision:s.vision,belief:s.belief,blocks:s.blocks,practiceTime:s.practiceTime});
+    }
+  },[idx,onComplete]);
+
+  const T=(en,es)=>lang==="es"?es:en;
+  const sign=getSign(dob);
+  const dark=phase==="yourWords";
+
+  const BELIEF_EN=["I'm stuck. I don't believe it yet.","I want to, but the doubt wins most days.","Some days I'm in. Some I'm not.","I'm close. I just need the reps.","I already am. I need it to compound."];
+  const BELIEF_ES=["Estoy atascada. Todavía no lo creo.","Quiero creerlo, pero la duda gana la mayoría de los días.","Algunos días estoy. Otros no.","Estoy cerca. Solo necesito la práctica.","Ya lo soy. Necesito que se acumule."];
+  const BLOCKS_EN=["I don't actually believe I can have it","I forget and guilt-spiral, then forget again","My past keeps arguing with my plan","I numb out before I can do the work","I need proof it's working before I commit","I'm afraid of what changes when I get it"];
+  const BLOCKS_ES=["En realidad no creo que pueda tenerlo","Lo olvido y me culpo, luego lo vuelvo a olvidar","Mi pasado sigue discutiendo con mi plan","Me entumezco antes de poder hacer el trabajo","Necesito pruebas de que funciona antes de comprometerme","Tengo miedo de lo que cambia cuando lo obtengo"];
+  const TIMES=["6:00 AM","7:00 AM","7:30 AM","8:00 AM","9:00 AM","12:00 PM","5:30 PM","9:00 PM"];
+
+  /* LANG PICK */
+  if(phase==="langPick") return (
+    <div style={{minHeight:"100vh",background:P.cardGrad,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"0 32px"}}>
+      <style>{G}</style>
+      <div className="ob" style={{textAlign:"center",marginBottom:52}}>
+        <div style={{width:64,height:64,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,boxShadow:`0 6px 24px rgba(245,220,130,0.38)`}}>✦</div>
+        <h1 style={{fontSize:58,fontWeight:400,fontStyle:"italic",color:P.ink,margin:"0 0 8px",fontFamily:PF}}>Celeste</h1>
+        <div style={{width:44,height:2,background:`linear-gradient(90deg,${P.butter},${P.pink})`,margin:"0 auto 14px",borderRadius:2}}/>
+        <p style={{fontSize:12,color:P.muted,fontFamily:SF,letterSpacing:"0.12em",textTransform:"uppercase"}}>your manifestation companion</p>
+      </div>
+      <div style={{width:"100%",maxWidth:300,display:"flex",flexDirection:"column",gap:12}}>
+        <button onClick={()=>{setLang("en");next();}} style={{background:P.white,border:`1.5px solid ${P.border}`,borderRadius:18,padding:"18px 24px",fontSize:18,color:P.ink,fontFamily:PF,fontStyle:"italic",textAlign:"center",boxShadow:"0 2px 16px rgba(245,220,130,0.15)"}}><span style={{color:P.butterD}}>EN</span> · English →</button>
+        <button onClick={()=>{setLang("es");next();}} style={{background:P.white,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:"18px 24px",fontSize:18,color:P.ink,fontFamily:PF,fontStyle:"italic",textAlign:"center",boxShadow:"0 2px 16px rgba(240,184,192,0.15)"}}><span style={{color:P.pinkD}}>ES</span> · Español →</button>
+      </div>
+      <button onClick={onSkip} style={{background:"none",border:"none",fontSize:11,color:P.muted,fontFamily:SF,marginTop:28,letterSpacing:"0.12em",textTransform:"uppercase"}}>{T("skip setup","omitir configuración")}</button>
+    </div>
+  );
+
+  /* INTRO */
+  if(phase==="intro") return (
+    <ObFrame pct={0}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <p style={{fontSize:40,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.2,margin:"0 0 6px",fontFamily:PF}}>{T("Hi. I'm Celeste.","Hola. Soy Celeste.")}</p>
+        <p style={{fontSize:20,color:P.body,fontFamily:SF,fontWeight:300,margin:"0 0 36px"}}>{T("Before we begin, a few questions.","Antes de empezar, unas preguntas.")}</p>
+        <YellowCard><p style={{fontFamily:PF,fontStyle:"italic",fontSize:17,color:P.ink,lineHeight:1.65,margin:0}}>{T("The more honestly you answer, the more Celeste can feel like yours — built around your specific life, your specific vision, the specific person you're becoming.","Cuanto más honestamente respondas, más Celeste puede sentirse tuya — construida alrededor de tu vida específica, tu visión específica, la persona específica en quien te estás convirtiendo.")}</p></YellowCard>
+        <PinkCard><p style={{fontFamily:SF,fontSize:14,color:P.ink,lineHeight:1.65,margin:0}}>{T("Everything you share stays with you. Celeste doesn't judge the size of the dream or how far you feel from it right now.","Todo lo que compartes se queda contigo. Celeste no juzga el tamaño del sueño ni cuán lejos te sientes de él ahora.")}</p></PinkCard>
+      </div>
+      <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" onClick={next} label={T("I'm ready →","Estoy lista →")}/></div>
+    </ObFrame>
+  );
+
+  /* NAME */
+  if(phase==="name") return (
+    <ObFrame pct={pct} onBack={back}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <p style={{fontSize:38,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.25,margin:"0 0 8px",fontFamily:PF}}>{T("What should I call you?","¿Cómo debo llamarte?")}</p>
+        <p style={{fontSize:14,color:P.muted,fontFamily:SF,margin:"0 0 30px"}}>{T("The name that feels most like you.","El nombre que más te parece tú.")}</p>
+        <ObInput iRef={iRef} ph={T("Your name","Tu nombre")} hint={T("NAME","NOMBRE")} value={name} onChange={setName} onEnter={()=>name.trim()&&next()}/>
+      </div>
+      <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" disabled={!name.trim()} onClick={next} label={T("Continue →","Continuar →")}/></div>
+    </ObFrame>
+  );
+
+  /* PRONOUNS */
+  if(phase==="pronouns"){
+    const opts=[["she / her","ella / ella"],["he / him","él / él"],["they / them","elles / elles"],["just use my name","solo usa mi nombre"]];
+    return (
+      <ObFrame pct={pct} onBack={back}>
+        <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+          <GLabel pink>{T("OPTIONAL · PRONOUNS","OPCIONAL · PRONOMBRES")}</GLabel>
+          <p style={{fontSize:36,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.3,margin:"0 0 8px",fontFamily:PF}}>{T(`Quick one, ${name}.`,`Una rápida, ${name}.`)}</p>
+          <p style={{fontSize:36,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.3,margin:"0 0 28px",fontFamily:PF}}>{T("How should I talk about you?","¿Cómo debo hablar de ti?")}</p>
+          {opts.map(([en,es])=><ObChoice key={en} label={lang==="es"?es:en} selected={pronouns===(lang==="es"?es:en)} onClick={()=>setPronouns(lang==="es"?es:en)}/>)}
+        </div>
+        <div style={{padding:"16px 32px 52px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <Btn variant="ghost" label={T("SKIP →","OMITIR →")} onClick={next}/>
+          {pronouns&&<Btn label={T("Continue →","Continuar →")} onClick={next}/>}
+        </div>
+      </ObFrame>
+    );
+  }
+
+  /* DOB */
+  if(phase==="dob") return (
+    <ObFrame pct={pct} onBack={back}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+        <GLabel>{T("YOUR ASTROLOGY","TU ASTROLOGÍA")}</GLabel>
+        <p style={{fontSize:36,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.3,margin:"0 0 8px",fontFamily:PF}}>{T("When were you born?","¿Cuándo naciste?")}</p>
+        <p style={{fontSize:14,color:P.muted,fontFamily:SF,margin:"0 0 28px"}}>{T("Your chart shapes how Celeste speaks to you.","Tu carta da forma a cómo Celeste te habla.")}</p>
+        <input ref={iRef} type="date" value={dob} onChange={e=>setDob(e.target.value)} style={{width:"100%",background:P.white,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:"15px 20px",fontSize:16,color:P.ink,fontFamily:SF,boxShadow:"0 2px 16px rgba(245,220,130,0.12)",outline:"none",boxSizing:"border-box",marginBottom:16}}/>
+        {sign&&<YellowCard>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+            <span style={{fontSize:32}}>{sign.e}</span>
+            <div>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:22,color:P.ink,margin:0}}>{sign.s}</p>
+              <p style={{fontSize:10,letterSpacing:"0.18em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:0}}>{sign.el} · {T("Ruled by","Regido por")} {sign.r}</p>
+            </div>
+          </div>
+          <p style={{fontSize:14,color:P.body,fontFamily:SF,lineHeight:1.65,margin:0}}>{lang==="es"?sign.es.t:sign.en.t}</p>
+        </YellowCard>}
+      </div>
+      <div style={{padding:"16px 32px 52px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <Btn variant="ghost" label={T("SKIP →","OMITIR →")} onClick={next}/>
+        {dob&&<Btn label={T("This is me →","Ese soy yo →")} onClick={next}/>}
+      </div>
+    </ObFrame>
+  );
+
+  /* VISION */
+  if(phase==="vision") return (
+    <ObFrame pct={pct} onBack={back}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+        <GLabel>{T("VISION · IN YOUR OWN WORDS","VISIÓN · EN TUS PROPIAS PALABRAS")}</GLabel>
+        <p style={{fontSize:32,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 8px",fontFamily:PF}}>{name?T(`${name}, if nothing could stop you,`,`${name}, si nada pudiera detenerte,`):T("If nothing could stop you,","Si nada pudiera detenerte,")}</p>
+        <p style={{fontSize:32,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 8px",fontFamily:PF}}>{T("what would you manifest?","¿qué manifestarías?")}</p>
+        <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 20px"}}>{T("Say it badly. Say it long. We'll shape it with you.","Dilo mal. Dilo largo. Lo daremos forma juntas.")}</p>
+        <textarea style={{width:"100%",background:P.white,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:"16px 20px",fontSize:16,color:P.ink,fontFamily:PF,fontStyle:"italic",resize:"none",lineHeight:1.85,minHeight:140,boxShadow:"0 2px 16px rgba(245,220,130,0.10)",outline:"none",boxSizing:"border-box",marginBottom:16}} placeholder={T("I want to…","Quiero…")} value={vision} onChange={e=>setVision(e.target.value)}/>
+        <p style={{fontSize:10,letterSpacing:"0.2em",color:P.muted,fontFamily:SF,textTransform:"uppercase",margin:"0 0 10px"}}>{T("OR START FROM","O EMPIEZA CON")}</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+          {[T("Build something of my own","Construir algo mío"),T("Find the love I deserve","Encontrar el amor que merezco"),T("Achieve financial freedom","Alcanzar la libertad financiera"),T("Move to my dream city","Mudarme a mi ciudad soñada")].map(s=><button key={s} onClick={()=>setVision(v=>v?v+". "+s:s)} style={{background:"rgba(255,255,255,0.82)",border:`1px solid ${P.border}`,borderRadius:50,padding:"9px 16px",fontSize:12,color:P.ink,fontFamily:SF}}>{s}</button>)}
+        </div>
+      </div>
+      <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" disabled={!vision.trim()} onClick={next} label={T("This is it →","Esto es →")}/></div>
+    </ObFrame>
+  );
+
+  /* BELIEF */
+  if(phase==="belief"){
+    const opts=lang==="es"?BELIEF_ES:BELIEF_EN;
+    return (
+      <ObFrame pct={pct} onBack={back}>
+        <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+          <GLabel pink>{T("HONEST CHECK-IN","CHECK-IN HONESTO")}</GLabel>
+          <p style={{fontSize:34,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 28px",fontFamily:PF}}>{T("Where are you with it, right now?","¿Dónde estás con esto, ahora mismo?")}</p>
+          {opts.map((o,i)=>(
+            <button key={i} onClick={()=>setBelief(i)} style={{width:"100%",background:belief===i?P.ink:P.white,border:belief===i?"none":`1px solid ${P.border}`,borderRadius:18,padding:"16px 20px",display:"flex",alignItems:"center",gap:16,marginBottom:10,textAlign:"left",boxShadow:belief===i?"0 4px 16px rgba(30,18,8,0.14)":"0 1px 8px rgba(245,220,130,0.10)",transition:"all 0.15s"}}>
+              <span style={{fontSize:22,fontFamily:PF,fontStyle:"italic",color:belief===i?P.butter:P.butterD,minWidth:26}}>{i+1}</span>
+              <span style={{fontSize:16,color:belief===i?P.butterL:P.ink,fontFamily:PF,fontStyle:"italic",lineHeight:1.4}}>{o}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" disabled={belief===null} onClick={next} label={T("Continue →","Continuar →")}/></div>
+      </ObFrame>
+    );
+  }
+
+  /* BLOCKS */
+  if(phase==="blocks"){
+    const opts=lang==="es"?BLOCKS_ES:BLOCKS_EN;
+    return (
+      <ObFrame pct={pct} onBack={back}>
+        <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+          <GLabel>{T("WHAT GETS IN THE WAY","LO QUE SE INTERPONE")}</GLabel>
+          <p style={{fontSize:34,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 8px",fontFamily:PF}}>{T("Which of these ring true?","¿Cuáles resuenan?")}</p>
+          <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 24px"}}>{T("Pick all that apply. No judgment.","Selecciona todos los que apliquen. Sin juicio.")}</p>
+          {opts.map((o,i)=>(
+            <button key={i} onClick={()=>setBlocks(s=>{const n=new Set(s);n.has(i)?n.delete(i):n.add(i);return n;})} style={{width:"100%",background:P.white,border:`1.5px solid ${blocks.has(i)?P.butterD:P.border}`,borderRadius:16,padding:"14px 20px",display:"flex",alignItems:"center",gap:14,marginBottom:10,textAlign:"left",boxShadow:"0 1px 8px rgba(245,220,130,0.08)"}}>
+              <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${blocks.has(i)?P.butterD:P.borderP}`,background:blocks.has(i)?P.butter:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+                {blocks.has(i)&&<span style={{color:P.ink,fontSize:12,fontWeight:600}}>✓</span>}
+              </div>
+              <span style={{fontSize:15,color:P.ink,fontFamily:SF,lineHeight:1.4}}>{o}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" onClick={next} label={T("Continue →","Continuar →")}/></div>
+      </ObFrame>
+    );
+  }
+
+  /* YOUR WORDS — dark screen */
+  if(phase==="yourWords") return (
+    <div style={{minHeight:"100vh",background:P.ink,display:"flex",flexDirection:"column",fontFamily:PF}}>
+      <style>{G}</style>
+      <ObBar pct={pct}/>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <p style={{fontSize:44,fontWeight:400,fontStyle:"italic",color:P.butterL,lineHeight:1.2,margin:"0 0 6px"}}>Okay, {name}.</p>
+        <p style={{fontSize:22,color:"rgba(251,240,178,0.65)",fontFamily:SF,fontWeight:300,margin:"0 0 32px"}}>{T("I heard you.","Te escuché.")}</p>
+        <div style={{background:"rgba(255,255,255,0.06)",border:`1px solid rgba(245,220,130,0.25)`,borderRadius:22,padding:"22px 22px"}}>
+          <p style={{fontSize:9,letterSpacing:"0.38em",color:P.butter,margin:"0 0 14px",fontFamily:SF,textTransform:"uppercase"}}>{T("YOUR WORDS","TUS PALABRAS")}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:19,color:P.butterL,lineHeight:1.78,margin:0}}>"{vision}"</p>
+        </div>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:28,color:P.butter,margin:"28px 0 0"}}>{T("Let's make it real.","Hagámoslo real.")}</p>
+      </div>
+      <div style={{padding:"16px 32px 52px"}}>
+        <button onClick={next} style={{width:"100%",background:P.butter,border:"none",borderRadius:50,padding:"18px 24px",fontSize:15,fontWeight:500,color:P.ink,fontFamily:SF,boxShadow:`0 4px 20px rgba(245,220,130,0.40)`}}>{T("I'm ready →","Estoy lista →")}</button>
+      </div>
+    </div>
+  );
+
+  /* PRACTICE TIME */
+  if(phase==="practiceTime") return (
+    <ObFrame pct={pct} onBack={back}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px",overflowY:"auto"}}>
+        <GLabel pink>{T("YOUR DAILY APPOINTMENT","TU CITA DIARIA")}</GLabel>
+        <p style={{fontSize:34,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 8px",fontFamily:PF}}>{T("Pick the hour you meet me.","Elige la hora en que me encuentras.")}</p>
+        <p style={{fontSize:14,color:P.muted,fontFamily:SF,margin:"0 0 22px"}}>{T("Same time, every day. That's the whole thing.","La misma hora, cada día. Eso es todo.")}</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+          {TIMES.map(t2=>(
+            <button key={t2} onClick={()=>setPracticeTime(t2)} style={{background:practiceTime===t2?P.ink:P.white,border:`1.5px solid ${practiceTime===t2?P.ink:P.border}`,borderRadius:18,padding:"16px 12px",textAlign:"center",transition:"all 0.15s",boxShadow:practiceTime===t2?"0 4px 16px rgba(30,18,8,0.14)":"0 1px 8px rgba(245,220,130,0.08)"}}>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:24,color:practiceTime===t2?P.butter:P.ink,margin:"0 0 3px"}}>{t2}</p>
+              <p style={{fontSize:9,letterSpacing:"0.22em",color:practiceTime===t2?"rgba(251,240,178,0.65)":P.muted,fontFamily:SF,textTransform:"uppercase",margin:0}}>{t2.includes("AM")?(parseInt(t2)<10?"EARLY MORNING":"MORNING"):t2==="12:00 PM"?"MIDDAY":"EVENING"}</p>
+            </button>
+          ))}
+        </div>
+        <PinkCard>
+          <p style={{fontSize:14,color:P.ink,fontFamily:SF,margin:0,lineHeight:1.6}}>✦ {T(`I'll be with you at `,`Estaré contigo a las `)}<strong style={{color:P.pinkD}}>{practiceTime}</strong>{T(" every day.","  cada día.")}</p>
+        </PinkCard>
+        {getSign(dob)&&<YellowCard>
+          <p style={{fontSize:9,letterSpacing:"0.22em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:"0 0 6px"}}>{getSign(dob).e} {getSign(dob).s} {T("Mantra","Mantra")}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.ink,margin:0,lineHeight:1.5}}>{lang==="es"?getSign(dob).es.m:getSign(dob).en.m}</p>
+        </YellowCard>}
+      </div>
+      <div style={{padding:"16px 32px 52px"}}><Btn variant="dark" onClick={next} label={T("Set the appointment →","Fijar la cita →")}/></div>
+    </ObFrame>
+  );
+
+  /* NOTIFICATIONS */
+  if(phase==="notifications") return (
+    <ObFrame pct={95} onBack={back}>
+      <div className="ob" style={{flex:1,padding:"72px 32px 24px"}}>
+        <GLabel>{T("WHAT YOU'LL RECEIVE","LO QUE RECIBIRÁS")}</GLabel>
+        <p style={{fontSize:34,fontWeight:400,fontStyle:"italic",color:P.ink,lineHeight:1.35,margin:"0 0 24px",fontFamily:PF}}>{T("Here's how you arrive at it.","Así es como llegas a ello.")}</p>
+        {[{time:practiceTime,title:T("Today is yours.","Hoy es tuyo."),sub:T("Set the intention.","Establece la intención."),yellow:true},{time:T("1:42 PM","1:42 PM"),title:T("I am always","Siempre estoy"),sub:T("attracting abundance.","atrayendo abundancia."),yellow:false}].map((m,i)=>(
+          <div key={i} style={{background:m.yellow?P.butterL:P.pinkL,borderRadius:18,padding:"16px 18px",marginBottom:12,border:`1px solid ${m.yellow?P.border:P.borderP}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{width:28,height:28,borderRadius:8,background:`linear-gradient(135deg,${P.butter},${P.pink})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:P.ink}}>✦</div>
+                <span style={{fontSize:13,fontWeight:500,color:P.ink,fontFamily:SF}}>Celeste</span>
+              </div>
+              <span style={{fontSize:12,color:P.muted,fontFamily:SF}}>{m.time}</span>
+            </div>
+            <p style={{fontFamily:PF,fontSize:20,color:P.ink,margin:"0 0 2px"}}>{m.title}</p>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:20,color:m.yellow?P.butterD:P.pinkD,margin:0}}>{m.sub}</p>
+          </div>
+        ))}
+        <p style={{fontSize:13,color:P.muted,fontFamily:SF,lineHeight:1.65}}>{T("A morning nudge at your hour. Affirmations through the day.","Un recordatorio matutino. Afirmaciones durante el día.")}</p>
+      </div>
+      <div style={{padding:"16px 32px 12px"}}><Btn variant="dark" onClick={next} label={T("Start my practice →","Empezar mi práctica →")}/></div>
+      <div style={{textAlign:"center",paddingBottom:44}}>
+        <Btn variant="ghost" onClick={next} label={T("Maybe later","Quizás después")}/>
+      </div>
+    </ObFrame>
+  );
+
+  return null;
+}
+/* ═══════════════════════════════════════════════════════════════
+   VOICE ENGINE — ElevenLabs via Vercel proxy (one-time setup)
+   Rachel voice · warm · audiobook quality · EN + ES
+ */
+const PROXY_URL = "https://celeste-voice-proxy.vercel.app";
+
+function useCelesteVoice(lang) {
+  const [playing,  setPlaying]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [paused,   setPaused]   = useState(false);
+  const [error,    setError]    = useState("");
+  const audioRef = useRef(null);
+  const blobRef  = useRef(null);
+
+  const cleanup = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.ontimeupdate = null;
+      audioRef.current = null;
+    }
+    if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null; }
+  }, []);
+
+  const stop   = useCallback(() => { cleanup(); setPlaying(false); setPaused(false); setLoading(false); setProgress(0); setError(""); }, [cleanup]);
+  const pause  = useCallback(() => { audioRef.current?.pause();  setPlaying(false); setPaused(true);  }, []);
+  const resume = useCallback(() => { audioRef.current?.play().catch(()=>{}); setPlaying(true); setPaused(false); }, []);
+
+  const speak = useCallback(async (text) => {
+    cleanup();
+    setError(""); setLoading(true); setProgress(0); setPlaying(false); setPaused(false);
+    try {
+      const res = await fetch(PROXY_URL + "/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.slice(0, 5000), lang }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError(err?.error || "Error " + res.status);
+        setLoading(false); return;
+      }
+      const blob = await res.blob();
+      if (blob.size < 500) { setError("No audio received"); setLoading(false); return; }
+      const url = URL.createObjectURL(blob);
+      blobRef.current = url;
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.ontimeupdate = () => { if (audio.duration) setProgress(audio.currentTime / audio.duration); };
+      audio.onended  = () => { setPlaying(false); setProgress(1); cleanup(); };
+      audio.onerror  = () => { setError("Playback error — tap ▶ to retry"); setPlaying(false); setLoading(false); };
+      setLoading(false); setPlaying(true);
+      await audio.play().catch(() => {
+        setPlaying(false);
+        setError(lang === "es" ? "Toca ▶ para iniciar." : "Tap ▶ to start.");
+      });
+    } catch {
+      setError("Network error — check your connection");
+      setLoading(false);
+    }
+  }, [lang, cleanup]);
+
+  useEffect(() => () => cleanup(), [cleanup]);
+  return { speak, pause, resume, stop, playing, paused, loading, progress, error };
+}
+
+function VoiceBar({ lang, text }) {
+  const T = (en, es) => lang === "es" ? es : en;
+  const { speak, pause, resume, stop, playing, paused, loading, progress, error } = useCelesteVoice(lang);
+  const [mode, setMode] = useState("read");
+  const pct = Math.round(progress * 100);
+
+  const handlePlayPause = () => {
+    if (loading) return;
+    if (!playing && !paused) { speak(text); return; }
+    if (paused) resume(); else pause();
+  };
+
+  return (
+    <div style={{position:"sticky",bottom:0,background:"rgba(254,250,243,0.97)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:`1px solid ${P.border}`,padding:"12px 20px 22px",display:"flex",flexDirection:"column",gap:10}}>
+
+      {/* Read / Listen toggle */}
+      <div style={{display:"flex",background:"rgba(245,220,130,0.15)",borderRadius:50,padding:3,gap:2}}>
+        {[["read",T("📖 Read","📖 Leer")],["listen",T("🎧 Listen","🎧 Escuchar")]].map(([m,label])=>(
+          <button key={m} onClick={()=>{
+            if(m==="read"   &&mode==="listen"){stop();setMode("read");}
+            if(m==="listen" &&mode==="read")  {setMode("listen");speak(text);}
+          }} style={{flex:1,borderRadius:50,border:"none",padding:"9px 12px",fontSize:12,fontWeight:500,fontFamily:SF,cursor:"pointer",transition:"all 0.2s",
+            background:mode===m?`linear-gradient(135deg,${P.butter},${P.pink})`:"transparent",
+            color:mode===m?P.ink:P.muted,
+            boxShadow:mode===m?`0 2px 10px rgba(245,220,130,0.35)`:"none"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Controls */}
+      {mode==="listen" && (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+
+          {/* Error */}
+          {!!error && (
+            <div style={{background:"rgba(240,184,192,0.22)",borderRadius:12,padding:"9px 14px",border:`1px solid ${P.borderP}`}}>
+              <p style={{fontSize:11,color:P.pinkD,fontFamily:SF,margin:0,lineHeight:1.5}}>{error}</p>
+            </div>
+          )}
+
+          {/* Player row */}
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onClick={handlePlayPause} style={{width:48,height:48,borderRadius:"50%",border:"none",
+              background:`linear-gradient(135deg,${P.butter},${P.pink})`,
+              cursor:loading?"default":"pointer",flexShrink:0,
+              boxShadow:`0 4px 18px rgba(245,220,130,0.48)`,
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {loading
+                ? <span style={{width:19,height:19,border:`2.5px solid rgba(44,26,16,0.18)`,borderTopColor:P.ink,borderRadius:"50%",animation:"spin 0.7s linear infinite",display:"inline-block"}}/>
+                : <span style={{fontSize:20,lineHeight:1,color:P.ink}}>{playing?"⏸":"▶"}</span>}
+            </button>
+            <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+              <div style={{height:4,background:"rgba(245,220,130,0.20)",borderRadius:2,overflow:"hidden"}}>
+                <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${P.butter},${P.pink})`,width:`${pct}%`,transition:"width 0.4s ease"}}/>
+              </div>
+              <p style={{fontSize:9,letterSpacing:"0.13em",color:P.muted,fontFamily:SF,margin:0,textTransform:"uppercase"}}>
+                {loading  ? T("Generating Rachel's voice…","Generando voz de Rachel…")
+                 : paused  ? T("Paused — tap ▶","En pausa — toca ▶")
+                 : playing ? T("Rachel · " + pct + "%","Rachel · " + pct + "%")
+                 :           T("Tap ▶ to begin","Toca ▶ para empezar")}
+              </p>
+            </div>
+            <button onClick={()=>{stop();setMode("read");}} style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${P.borderP}`,background:"rgba(255,255,255,0.80)",fontSize:13,cursor:"pointer",color:P.pinkD,display:"flex",alignItems:"center",justifyContent:"center"}}>■</button>
+          </div>
+
+          {!loading && !playing && !paused && !error && (
+            <p style={{fontSize:10,color:P.muted,fontFamily:SF,textAlign:"center",lineHeight:1.55,margin:0}}>
+              {T("Close your eyes. This is you, reading your own future.","Cierra los ojos. Eres tú, leyendo tu propio futuro.")}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function PlayerScreen({lang,card,others,onClose,onSwitch}){
+  const T=(en,es)=>lang==="es"?es:en;
+  const fullText=[card.title,card.story,card.verse?`${card.verse.ref}. ${card.verse.text}. ${card.verse.note}`:""].filter(Boolean).join(". ");
+  return (
+    <div style={{minHeight:"100vh",background:P.heroGrad,display:"flex",flexDirection:"column"}}>
+      <style>{G}</style>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"52px 24px 12px"}}>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,0.78)",border:"none",width:40,height:40,borderRadius:"50%",fontSize:18,color:P.pinkD}}>×</button>
+        <p style={{fontSize:11,letterSpacing:"0.38em",textTransform:"uppercase",color:P.muted,margin:0,fontFamily:SF}}>Celeste</p>
+        <div style={{width:40}}/>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"8px 24px 120px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+          <span style={{fontSize:9,letterSpacing:"0.22em",background:P.butterL,color:P.butterD,borderRadius:10,padding:"3px 10px",fontFamily:SF}}>{card.category}</span>
+          {card.verse&&<span style={{fontSize:9,background:P.pinkL,color:P.pinkD,borderRadius:10,padding:"3px 10px",fontFamily:SF}}>📖 {card.verse.ref}</span>}
+        </div>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:26,color:P.ink,textAlign:"center",lineHeight:1.4,margin:"0 0 28px"}}>{card.title}</p>
+        <div style={{margin:"0 0 32px"}}><Orb size={180}/></div>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:16,color:"rgba(30,18,8,0.86)",lineHeight:2.1,margin:"0 0 32px",whiteSpace:"pre-wrap"}}>{card.story}</p>
+        {card.verse&&(
+          <div style={{background:`linear-gradient(135deg,${P.pinkL},${P.butterL})`,borderRadius:22,padding:"22px 20px",border:`1px solid ${P.borderP}`,marginBottom:20,boxShadow:"0 2px 18px rgba(240,184,192,0.20)"}}>
+            <GLabel pink>{T("THE WORD FOR YOUR MANIFESTATION","LA PALABRA PARA TU MANIFESTACIÓN")}</GLabel>
+            <p style={{fontSize:12,letterSpacing:"0.2em",color:P.pinkD,margin:"0 0 10px",fontWeight:500,fontFamily:SF}}>{card.verse.ref}</p>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:20,color:P.ink,lineHeight:1.65,margin:"0 0 12px"}}>"{card.verse.text}"</p>
+            <p style={{fontFamily:SF,fontSize:13,color:P.body,lineHeight:1.8,margin:0}}>{card.verse.note}</p>
+          </div>
+        )}
+        {others.length>0&&(
+          <div style={{marginTop:8}}>
+            <GLabel>{T("NEXT UP","SIGUIENTE")}</GLabel>
+            <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:8}}>
+              {others.map(c=>(
+                <div key={c.id} onClick={()=>onSwitch(c)} style={{flexShrink:0,width:170,background:"rgba(255,255,255,0.70)",borderRadius:20,padding:16,cursor:"pointer",border:`1px solid ${P.border}`}}>
+                  <p style={{fontFamily:PF,fontStyle:"italic",fontSize:13,color:P.ink,lineHeight:1.44,margin:"0 0 10px"}}>{c.title}</p>
+                  <span style={{fontSize:9,letterSpacing:"0.15em",color:P.muted,fontFamily:SF}}>{c.date}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <VoiceBar lang={lang} text={fullText}/>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME TAB */
+function HomeTab({lang,name,profile,cards,onOpen,onGoStories}){
+  const T=(en,es)=>lang==="es"?es:en;
+  const hero=cards[0]||null;
+  const rest=cards.slice(1);
+  const sign=getSign(profile.dob);
+  const moon=getMoonPhase();
+  const today=new Date().toLocaleDateString(lang==="es"?"es-ES":"en-US",{weekday:"long",month:"long",day:"numeric"});
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 22px 110px"}}>
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+        <div>
+          <h2 style={{fontFamily:PF,fontSize:36,fontWeight:400,fontStyle:"italic",color:P.ink,margin:0,lineHeight:1.2}}>{name?<>{T("Hi, ","Hola, ")}<em style={{color:P.pinkD}}>{name}</em>.</>:T("Hi.","Hola.")}</h2>
+          <p style={{fontSize:11,letterSpacing:"0.12em",color:P.muted,margin:"4px 0 0",fontFamily:SF,textTransform:"capitalize"}}>{today}</p>
+        </div>
+        {name&&<div style={{width:46,height:46,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontFamily:SF,color:P.ink,fontWeight:600,flexShrink:0,boxShadow:`0 3px 14px rgba(245,220,130,0.35)`}}>{name[0].toUpperCase()}</div>}
+      </div>
+
+      {/* Sign + Moon strip */}
+      {sign&&<div style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:16,padding:"12px 16px",marginBottom:18,border:`1px solid ${P.border}`,display:"flex",alignItems:"center",gap:12}}>
+        <span style={{fontSize:24}}>{sign.e}</span>
+        <div style={{flex:1}}>
+          <p style={{fontSize:9,letterSpacing:"0.2em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:"0 0 2px"}}>{sign.s} · {moon} {T("Moon","Luna")}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:15,color:P.ink,margin:0}}>{lang==="es"?sign.es.m:sign.en.m}</p>
+        </div>
+      </div>}
+
+      <div style={{height:1,background:`linear-gradient(90deg,${P.border},${P.borderP},transparent)`,margin:"0 0 20px"}}/>
+
+      {/* Today's Moment */}
+      <GLabel>{T("TODAY'S MOMENT","MOMENTO DE HOY")}</GLabel>
+      {hero?(
+        <div onClick={()=>onOpen(hero)} style={{background:P.white,borderRadius:24,padding:"22px 22px 18px",marginBottom:24,boxShadow:`0 4px 24px rgba(245,220,130,0.20),0 1px 8px rgba(240,184,192,0.15)`,border:`1px solid ${P.border}`,cursor:"pointer",position:"relative"}}>
+          <div style={{position:"absolute",top:18,right:18}}>
+            {hero.verse&&<span style={{background:P.pinkL,color:P.pinkD,fontSize:9,letterSpacing:"0.12em",borderRadius:10,padding:"3px 9px",fontFamily:SF}}>📖</span>}
+          </div>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:21,color:P.ink,lineHeight:1.45,margin:"0 0 16px",paddingRight:40}}>{hero.title}</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <p style={{fontSize:10,letterSpacing:"0.3em",color:P.muted,margin:0,fontFamily:SF}}>{T("TAP TO READ","TOCA PARA LEER")}</p>
+            <div style={{background:`linear-gradient(135deg,${P.butter},${P.pink})`,borderRadius:50,padding:"8px 18px",fontSize:12,color:P.ink,fontFamily:SF,letterSpacing:"0.1em"}}>Read →</div>
+          </div>
+        </div>
+      ):(
+        <div onClick={onGoStories} style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:24,padding:"32px 24px",marginBottom:24,border:`1px solid ${P.border}`,cursor:"pointer",textAlign:"center"}}>
+          <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:`0 4px 16px rgba(245,220,130,0.30)`}}>✦</div>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:21,color:P.ink,margin:"0 0 6px"}}>{T("The version of you who already has this","La versión de ti que ya tiene esto")}</p>
+          <p style={{fontSize:14,color:P.muted,fontFamily:SF,margin:"0 0 20px"}}>{T("— she exists. Let's tell her story.","— existe. Contemos su historia.")}</p>
+          <Btn label={T("✦ Create my first story","✦ Crear mi primera historia")} onClick={onGoStories}/>
+        </div>
+      )}
+
+      {/* For You grid */}
+      {rest.length>0&&<>
+        <GLabel pink>{T("FOR YOU","PARA TI")}</GLabel>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {rest.slice(0,8).map((c,i)=>(
+            <div key={c.id} onClick={()=>onOpen(c)} style={{background:i%2===0?P.butterL:P.pinkL,borderRadius:20,padding:16,cursor:"pointer",border:`1px solid ${i%2===0?P.border:P.borderP}`,minHeight:120,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:13,color:P.ink,lineHeight:1.44,margin:"0 0 10px"}}>{c.title}</p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:9,letterSpacing:"0.12em",color:P.muted,fontFamily:SF}}>{c.date}</span>
+                <span style={{fontSize:14,color:i%2===0?P.butterD:P.pinkD}}>→</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STORIES TAB */
+function StoriesTab({lang,profile,cards,addCard,onOpen}){
+  const [sub,setSub]=useState("read");
+  const [step,setStep]=useState(0);
+  const [ans,setAns]=useState({});
+  const [busy,setBusy]=useState(false);
+  const filled=useRef(false);
+  const T=(en,es)=>lang==="es"?es:en;
+
+  const QS=lang==="es"?[
+    {id:"home",q:"¿Dónde vives?",ph:"Miami, París, junto al mar…"},
+    {id:"love",q:"¿Cómo es el amor en tu vida?",ph:"Una pareja devota, amor propio…"},
+    {id:"career",q:"¿Cómo generas ingresos y creas?",ph:"Mi propia marca, ingresos pasivos…"},
+    {id:"morning",q:"Describe tu mañana de ensueño.",ph:"Matcha, sin alarma, movimiento, paz…"},
+    {id:"feeling",q:"¿Cómo te sientes cada día?",ph:"En paz, magnética, amada…"},
+    {id:"extra",q:"¿Qué más completa esta vida?",ph:"Fe, viajes, amistades…"},
+  ]:[
+    {id:"home",q:"Where do you live?",ph:"Miami, Paris, a villa by the sea…"},
+    {id:"love",q:"What does love look like for you?",ph:"A devoted partner, deep self-love…"},
+    {id:"career",q:"How do you earn and create?",ph:"My own brand, passive income…"},
+    {id:"morning",q:"Walk me through your dream morning.",ph:"Matcha, no alarm, movement, peace…"},
+    {id:"feeling",q:"How do you feel every day?",ph:"Peaceful, magnetic, deeply loved…"},
+    {id:"extra",q:"What else makes this life complete?",ph:"Faith, travel, close friendships…"},
+  ];
+
+  useEffect(()=>{
+    if(!filled.current&&profile&&Object.keys(profile).length>0){
+      setAns(p=>({...p,...profile}));filled.current=true;
+    }
+  },[profile]);
+
+  const q=QS[step];
+  const last=step===QS.length-1;
+  const CATS_EN=["FAITH + VERSE","LOVE","ABUNDANCE","PURPOSE","IDENTITY","HOME","FAITH","LOVE","ABUNDANCE","PURPOSE"];
+  const CATS_ES=["FE + VERSÍCULO","AMOR","ABUNDANCIA","PROPÓSITO","IDENTIDAD","HOGAR","FE","AMOR","ABUNDANCIA","PROPÓSITO"];
+
+  const doGen=()=>{
+    setBusy(true);
+    setTimeout(()=>{
+      const cats=lang==="es"?CATS_ES:CATS_EN;
+      const verse=pickVerse({...ans,vision:profile.vision||""},lang);
+      const nc=Array.from({length:10}).map((_,s)=>({
+        id:Date.now()+s,title:genTitle(ans,lang,s),story:genStory(ans,lang,s),
+        date:new Date().toLocaleDateString(lang==="es"?"es-ES":"en-US",{month:"short",day:"numeric"}),
+        category:cats[s%cats.length],liked:false,verse:s===0?verse:null,
+      }));
+      nc.forEach(addCard);setBusy(false);onOpen(nc[0]);
+    },200);
+  };
+
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 18px 110px"}}>
+      <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 18px"}}>{T("Stories","Historias")}</h2>
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        <Chip label={T("Read","Leer")} active={sub==="read"} onClick={()=>setSub("read")}/>
+        <Chip label={T("Create","Crear")} active={sub==="create"} onClick={()=>setSub("create")}/>
+        <Chip label={T("Library","Biblioteca")} active={sub==="library"} onClick={()=>setSub("library")}/>
+      </div>
+
+      {sub==="read"&&(cards.length===0
+        ?<div style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:24,padding:"36px 24px",textAlign:"center",border:`1px solid ${P.border}`}}>
+          <div style={{width:60,height:60,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>✦</div>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 6px",lineHeight:1.25}}>{T("The version of you","La versión de ti")}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:36,color:P.pinkD,margin:"0 0 20px",lineHeight:1.25}}>{T("who already has this, she exists.","que ya tiene esto, existe.")}</p>
+          <p style={{fontSize:14,color:P.muted,fontFamily:SF,margin:"0 0 20px"}}>{T("Create your first story and read her day.","Crea tu primera historia y lee su día.")}</p>
+          <Btn label={T("✦ Create","✦ Crear")} onClick={()=>setSub("create")}/>
+        </div>
+        :<>
+          {/* Featured */}
+          <div onClick={()=>onOpen(cards[0])} style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:24,padding:"22px 22px 18px",marginBottom:14,cursor:"pointer",border:`1px solid ${P.border}`,position:"relative",boxShadow:`0 4px 20px rgba(245,220,130,0.18)`}}>
+            <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
+              <span style={{fontSize:9,letterSpacing:"0.22em",background:P.white,color:P.butterD,borderRadius:10,padding:"2px 8px",fontFamily:SF}}>{cards[0].category}</span>
+              <span style={{fontSize:9,color:P.muted,fontFamily:SF,alignSelf:"center"}}>{cards[0].date}</span>
+              {cards[0].verse&&<span style={{fontSize:9,background:P.pinkL,color:P.pinkD,borderRadius:10,padding:"2px 8px",fontFamily:SF}}>📖 {cards[0].verse.ref}</span>}
+            </div>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:20,color:P.ink,lineHeight:1.45,margin:"0 0 14px"}}>{cards[0].title}</p>
+            <p style={{fontSize:10,letterSpacing:"0.28em",color:P.muted,margin:0,fontFamily:SF}}>{T("TAP TO READ","TOCA PARA LEER")}</p>
+          </div>
+          {cards.length>1&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {cards.slice(1).map((c,i)=>(
+              <div key={c.id} onClick={()=>onOpen(c)} style={{background:i%2===0?P.butterL:P.pinkL,borderRadius:20,padding:16,cursor:"pointer",border:`1px solid ${i%2===0?P.border:P.borderP}`,minHeight:120,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                <p style={{fontFamily:PF,fontStyle:"italic",fontSize:13,color:P.ink,lineHeight:1.44,margin:"0 0 10px"}}>{c.title}</p>
+                <span style={{fontSize:9,letterSpacing:"0.12em",color:P.muted,fontFamily:SF}}>{c.date}</span>
+              </div>
+            ))}
+          </div>}
+        </>
+      )}
+
+      {sub==="create"&&(
+        <div className="fi" style={{background:P.white,borderRadius:26,padding:26,boxShadow:`0 4px 24px rgba(245,220,130,0.18)`,border:`1px solid ${P.border}`}}>
+          <div style={{display:"flex",gap:3,marginBottom:18}}>
+            {QS.map((_,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=step?`linear-gradient(90deg,${P.butter},${P.pink})`:"rgba(245,220,130,0.22)",transition:"background 0.3s"}}/>)}
+          </div>
+          <GLabel>{`${step+1} / ${QS.length}`}</GLabel>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:22,color:P.ink,lineHeight:1.44,margin:"0 0 16px"}}>{q.q}</p>
+          {step===0&&Object.keys(profile||{}).length>0&&<p style={{fontSize:11,color:P.muted,fontStyle:"italic",margin:"0 0 8px",fontFamily:SF}}>✦ {T("Pre-filled from your profile","Pre-llenado desde tu perfil")}</p>}
+          <textarea style={{width:"100%",background:P.ivory,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:"14px 16px",fontSize:15,color:P.ink,fontFamily:PF,fontStyle:"italic",resize:"none",lineHeight:1.8,height:100,marginBottom:18,boxSizing:"border-box"}} placeholder={q.ph} value={ans[q.id]||""} onChange={e=>setAns(p=>({...p,[q.id]:e.target.value}))}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            {step>0?<Btn variant="outline" small label={T("← Back","← Atrás")} onClick={()=>setStep(s=>s-1)}/>:<div/>}
+            {!last?<Btn label={T("Next →","Siguiente →")} onClick={()=>setStep(s=>s+1)}/>
+              :<Btn disabled={busy} onClick={doGen} label={busy?<span style={{display:"flex",alignItems:"center",gap:6}}><Spin/>{T("Creating…","Creando…")}</span>:T("✦ Write my stories","✦ Escribir mis historias")}/>}
+          </div>
+          {last&&!busy&&<p style={{textAlign:"center",fontSize:11,color:P.muted,margin:"12px 0 0",fontFamily:SF}}>{T("10 personalized stories · first includes a Bible verse","10 historias personalizadas · la primera con versículo")}</p>}
+        </div>
+      )}
+
+      {sub==="library"&&(cards.length===0
+        ?<Card style={{textAlign:"center",padding:28}}><p style={{fontFamily:PF,fontStyle:"italic",fontSize:16,color:P.body,margin:0}}>{T("Your library is empty.","Tu biblioteca está vacía.")}</p></Card>
+        :cards.map(c=><Card key={c.id}>
+          <div style={{display:"flex",gap:6,marginBottom:6}}><span style={{fontSize:9,background:P.butterL,color:P.butterD,borderRadius:10,padding:"2px 8px",fontFamily:SF}}>{c.category}</span><span style={{fontSize:9,color:P.muted,fontFamily:SF}}>{c.date}</span></div>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:16,color:P.ink,margin:"0 0 8px"}}>{c.title}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:13,color:P.body,lineHeight:1.7,margin:"0 0 12px"}}>{(c.story||"").slice(0,130)}…</p>
+          <Btn variant="outline" small label={T("Read →","Leer →")} onClick={()=>onOpen(c)}/>
+        </Card>)
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AFFIRMATIONS TAB */
+function AffirmTab({lang,profile}){
+  const [mode,setMode]=useState("daily");
+  const [idx,setIdx]=useState(0);
+  const [liked,setLiked]=useState(new Set());
+  const [jIdx,setJIdx]=useState(0);
+  const [jText,setJText]=useState("");
+  const [openMed,setOpenMed]=useState(null);
+  const T=(en,es)=>lang==="es"?es:en;
+  const affs=getAffsByGoal(profile,lang);
+  const jPr=JOURNALS[lang]||JOURNALS.en;
+  const medList=MEDS[lang]||MEDS.en;
+
+  if(openMed) return (
+    <div style={{background:P.ivory,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:`linear-gradient(145deg,${P.butterL},${P.pinkL})`,padding:"52px 24px 24px",position:"relative"}}>
+        <button onClick={()=>setOpenMed(null)} style={{position:"absolute",top:18,left:20,background:"rgba(255,255,255,0.78)",border:"none",width:38,height:38,borderRadius:"50%",fontSize:18,color:P.pinkD,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
+        <div style={{textAlign:"center",paddingTop:8}}>
+          <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:P.ink}}>✦</div>
+          <GLabel>{openMed.dur}</GLabel>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:28,color:P.ink,margin:0,lineHeight:1.3}}>{openMed.title}</p>
+        </div>
+      </div>
+      <div style={{flex:1,padding:"28px 28px 16px",overflowY:"auto"}}>
+        <div style={{background:P.white,borderRadius:24,padding:"28px 24px",boxShadow:`0 4px 24px rgba(245,220,130,0.15)`,border:`1px solid ${P.border}`}}>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.ink,lineHeight:2.0,margin:0,whiteSpace:"pre-wrap"}}>{openMed.script}</p>
+        </div>
+        <div style={{marginTop:20,background:`linear-gradient(135deg,${P.pinkL},${P.butterL})`,borderRadius:20,padding:"18px 20px",border:`1px solid ${P.borderP}`}}>
+          <GLabel pink>{T("HOW TO USE","CÓMO USAR")}</GLabel>
+          <p style={{fontFamily:SF,fontSize:13,color:P.body,lineHeight:1.7,margin:0}}>{T("Switch to Listen mode below and close your eyes. Let Celeste's voice guide you through the meditation. Or read slowly at your own pace — let each sentence settle before moving to the next.","Cambia al modo Escuchar abajo y cierra los ojos. Deja que la voz de Celeste te guíe. O lee despacio a tu propio ritmo — deja que cada frase se asiente antes de pasar a la siguiente.")}</p>
+        </div>
+      </div>
+      <VoiceBar lang={lang} text={openMed.title+". "+openMed.script}/>
+    </div>
+  );
+
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 22px 110px"}}>
+      <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 18px"}}>{T("Practice","Práctica")}</h2>
+      <div style={{display:"flex",gap:8,marginBottom:22}}>
+        <Chip label={T("Daily","Diarias")} active={mode==="daily"} onClick={()=>setMode("daily")}/>
+        <Chip label={T("Journal","Diario")} active={mode==="journal"} onClick={()=>setMode("journal")}/>
+        <Chip label={T("Meditate","Meditar")} active={mode==="meditate"} onClick={()=>setMode("meditate")}/>
+      </div>
+
+      {mode==="daily"&&(
+        <div>
+          <p style={{fontSize:11,color:P.muted,fontFamily:SF,letterSpacing:"0.1em",margin:"0 0 14px"}}>{T("TAILORED TO YOUR VISION","ADAPTADAS A TU VISIÓN")}</p>
+          {/* Big card */}
+          <div style={{background:`linear-gradient(145deg,${P.butterL},#fffef2,${P.pinkL})`,borderRadius:28,padding:"52px 28px",textAlign:"center",marginBottom:16,minHeight:240,display:"flex",flexDirection:"column",justifyContent:"center",position:"relative",boxShadow:`0 6px 28px rgba(245,220,130,0.22),0 2px 10px rgba(240,184,192,0.18)`}}>
+            <button onClick={()=>setLiked(s=>{const n=new Set(s);n.has(idx)?n.delete(idx):n.add(idx);return n;})} style={{position:"absolute",top:18,right:18,background:"none",border:"none",fontSize:26,color:liked.has(idx)?P.pinkD:"rgba(240,184,192,0.50)"}}>{liked.has(idx)?"♥":"♡"}</button>
+            <button onClick={()=>{}} style={{position:"absolute",top:18,left:18,background:"none",border:"none",fontSize:14,color:P.muted,fontFamily:SF,letterSpacing:"0.1em"}}>•••</button>
+            <div style={{width:42,height:42,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>✦</div>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:24,color:P.ink,lineHeight:1.55,margin:"0 0 18px"}}>{affs[idx]}</p>
+            <p style={{fontSize:9,letterSpacing:"0.3em",color:P.muted,fontFamily:SF}}>{T("SWIPE TO ALIGN","DESLIZA PARA ALINEAR")}</p>
+          </div>
+          {/* Dots */}
+          <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:18}}>
+            {affs.map((_,i)=><div key={i} style={{width:i===idx?24:7,height:7,borderRadius:10,background:i===idx?`linear-gradient(90deg,${P.butter},${P.pink})`:"rgba(245,220,130,0.30)",transition:"all 0.3s"}}/>)}
+          </div>
+          <div style={{display:"flex",justifyContent:"center",gap:12}}>
+            <Btn variant="outline" small label={T("← Prev","← Ant")} onClick={()=>setIdx(i=>(i-1+affs.length)%affs.length)}/>
+            <Btn small label={T("Next →","Siguiente →")} onClick={()=>setIdx(i=>(i+1)%affs.length)}/>
+          </div>
+          {/* Mini cards peek */}
+          <div style={{marginTop:24}}>
+            <GLabel>{T("MORE FOR YOU","MÁS PARA TI")}</GLabel>
+            {affs.slice(0,3).map((a,i)=>(
+              <div key={i} onClick={()=>setIdx(i)} style={{background:i===idx?`linear-gradient(135deg,${P.butterL},${P.pinkL})`:P.white,borderRadius:18,padding:"14px 18px",marginBottom:10,border:`1px solid ${i===idx?P.border:"rgba(245,220,130,0.18)"}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:i===idx?`linear-gradient(135deg,${P.butter},${P.pink})`:"rgba(245,220,130,0.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:P.ink,flexShrink:0}}>{i+1}</div>
+                <p style={{fontFamily:PF,fontStyle:"italic",fontSize:14,color:P.ink,margin:0,lineHeight:1.4}}>{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mode==="journal"&&(
+        <Card>
+          <GLabel>{T("TODAY'S PROMPT","REFLEXIÓN DE HOY")}</GLabel>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:21,color:P.ink,lineHeight:1.5,margin:"0 0 16px"}}>{jPr[jIdx]}</p>
+          <textarea style={{width:"100%",background:P.ivory,border:`1.5px solid ${P.borderP}`,borderRadius:18,padding:"14px 16px",fontSize:14,color:P.ink,fontFamily:SF,resize:"none",height:180,marginBottom:14,lineHeight:1.7,boxSizing:"border-box"}} placeholder={T("Write freely…","Escribe libremente…")} value={jText} onChange={e=>setJText(e.target.value)}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <Btn variant="outline" small label={T("New prompt","Nueva")} onClick={()=>{setJIdx(i=>(i+1)%jPr.length);setJText("");}}/>
+            <span style={{fontSize:11,color:P.muted,fontFamily:SF}}>{jText.length} chars</span>
+          </div>
+        </Card>
+      )}
+
+      {mode==="meditate"&&medList.map((m,i)=>(
+        <div key={i} style={{background:i%2===0?`linear-gradient(135deg,${P.butterL},rgba(255,255,255,0.9))`:`linear-gradient(135deg,${P.pinkL},rgba(255,255,255,0.9))`,borderRadius:22,padding:20,marginBottom:12,border:`1px solid ${i%2===0?P.border:P.borderP}`,boxShadow:"0 2px 14px rgba(245,220,130,0.12)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+            <div style={{width:46,height:46,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14,color:P.ink,fontWeight:600}}>✦</div>
+            <div>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.ink,margin:"0 0 2px"}}>{m.title}</p>
+              <p style={{fontSize:10,letterSpacing:"0.18em",color:P.muted,margin:0,fontFamily:SF,textTransform:"uppercase"}}>{m.dur}</p>
+            </div>
+          </div>
+          <p style={{fontFamily:SF,fontSize:13,color:P.body,lineHeight:1.7,margin:"0 0 14px"}}>{m.script.slice(0,160)}…</p>
+          <button onClick={()=>setOpenMed(m)} style={{background:P.white,border:`1.5px solid ${P.borderP}`,borderRadius:50,padding:"9px 20px",fontSize:11,letterSpacing:"0.16em",textTransform:"uppercase",color:P.pinkD,fontFamily:SF}}>
+            {T("Read full meditation →","Leer meditación completa →")}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRAYER TAB */
+function PrayerTab({lang}){
+  const [active,setActive]=useState("morning");
+  const T=(en,es)=>lang==="es"?es:en;
+  const prs=PRS[lang]||PRS.en;
+  const keys=[{k:"morning",i:"🌅",l:T("Morning","Mañana")},{k:"evening",i:"🌙",l:T("Evening","Noche")},{k:"belief",i:"✦",l:T("Belief","Creencia")},{k:"abundance",i:"💛",l:T("Abundance","Abundancia")},{k:"love",i:"🌸",l:T("Love","Amor")}];
+  const activeKey=keys.find(k=>k.k===active);
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      <div style={{padding:"56px 22px 24px",flex:1,overflowY:"auto"}}>
+        <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 6px"}}>{T("Prayer","Oración")}</h2>
+        <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 22px"}}>{T("Words for your manifestation journey.","Palabras para tu camino de manifestación.")}</p>
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4,marginBottom:22}}>
+          {keys.map(k=><button key={k.k} onClick={()=>setActive(k.k)} style={{flexShrink:0,background:active===k.k?P.ink:P.white,border:active===k.k?"none":`1px solid ${P.border}`,borderRadius:50,padding:"9px 18px",fontSize:13,color:active===k.k?P.butterL:P.body,fontFamily:PF,fontStyle:"italic",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap",boxShadow:active===k.k?"0 3px 14px rgba(30,18,8,0.18)":"none"}}>{k.i} {k.l}</button>)}
+        </div>
+        <div style={{background:`linear-gradient(145deg,${P.ink},#2A1A10)`,borderRadius:26,padding:"28px 26px",marginBottom:16,boxShadow:"0 6px 28px rgba(30,18,8,0.22)"}}>
+          <p style={{fontSize:9,letterSpacing:"0.38em",color:P.butter,fontFamily:SF,textTransform:"uppercase",margin:"0 0 16px"}}>{activeKey?.i} {activeKey?.l}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:17,color:"rgba(254,245,231,0.92)",lineHeight:1.88,margin:0}}>{prs[active]}</p>
+        </div>
+        <YellowCard>
+          <GLabel>{T("FOR YOUR PRACTICE","PARA TU PRÁCTICA")}</GLabel>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:16,color:P.ink,lineHeight:1.65,margin:0}}>{T("Read or listen to this prayer once in the morning, once at night. Let it sink below the words into the belief.","Lee o escucha esta oración una vez por la mañana, una vez por la noche. Deja que se hunda debajo de las palabras hasta la creencia.")}</p>
+        </YellowCard>
+      </div>
+      <VoiceBar lang={lang} text={`${activeKey?.l||""}. ${prs[active]}`}/>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ASTROLOGY TAB */
+function AstrologyTab({lang,profile}){
+  const [sel,setSel]=useState(null);
+  const T=(en,es)=>lang==="es"?es:en;
+  const mySign=getSign(profile.dob);
+  const moon=getMoonPhase();
+  const show=sel||mySign;
+  const ELS={Fire:{en:"You ignite, initiate, and inspire.",es:"Enciendes, inicias e inspiras."},Earth:{en:"You build, ground, and endure.",es:"Construyes, anclas y perdueas."},Air:{en:"You think, connect, and transmit.",es:"Piensas, conectas y transmites."},Water:{en:"You feel, flow, and transform.",es:"Sientes, fluyes y te transformas."}};
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 22px 110px"}}>
+      <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 6px"}}>{T("Stars","Astros")}</h2>
+      <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 20px"}}>{T("Your chart shapes how you manifest.","Tu carta da forma a cómo manifiestas.")}</p>
+
+      {/* Moon */}
+      <div style={{background:P.ink,borderRadius:22,padding:"18px 20px",marginBottom:18,display:"flex",alignItems:"center",gap:14}}>
+        <span style={{fontSize:38}}>{moon}</span>
+        <div>
+          <p style={{fontSize:9,letterSpacing:"0.28em",color:P.butter,fontFamily:SF,textTransform:"uppercase",margin:"0 0 4px"}}>{T("TODAY'S LUNAR ENERGY","ENERGÍA LUNAR DE HOY")}</p>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:17,color:"rgba(254,245,231,0.92)",margin:"0 0 3px"}}>{T("Use this in your visualization.","Úsalo en tu visualización.")}</p>
+          <p style={{fontSize:12,color:"rgba(251,240,178,0.55)",fontFamily:SF,margin:0}}>{T("The moon mirrors your inner world.","La luna refleja tu mundo interior.")}</p>
+        </div>
+      </div>
+
+      {/* My sign */}
+      {mySign&&<>
+        <GLabel>{T("YOUR SIGN","TU SIGNO")}</GLabel>
+        <div style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:24,padding:"22px",marginBottom:18,border:`1px solid ${P.border}`,boxShadow:`0 4px 20px rgba(245,220,130,0.18)`}}>
+          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
+            <span style={{fontSize:44}}>{mySign.e}</span>
+            <div>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:28,color:P.ink,margin:0}}>{mySign.s}</p>
+              <p style={{fontSize:10,letterSpacing:"0.16em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:0}}>{mySign.el} · {mySign.d} · {T("Ruled by","Regido por")} {mySign.r}</p>
+            </div>
+          </div>
+          <p style={{fontSize:14,color:P.body,fontFamily:SF,lineHeight:1.68,margin:"0 0 14px"}}>{lang==="es"?mySign.es.t:mySign.en.t}</p>
+          <div style={{background:"rgba(255,255,255,0.60)",borderRadius:16,padding:"12px 16px"}}>
+            <p style={{fontSize:9,letterSpacing:"0.22em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:"0 0 6px"}}>{T("YOUR MANTRA","TU MANTRA")}</p>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:19,color:P.pinkD,margin:0}}>{lang==="es"?mySign.es.m:mySign.en.m}</p>
+          </div>
+        </div>
+      </>}
+
+      {/* All signs */}
+      <GLabel pink>{T("ALL SIGNS","TODOS LOS SIGNOS")}</GLabel>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
+        {ZODIAC.map(z=><button key={z.s} onClick={()=>setSel(sel?.s===z.s?null:z)} style={{background:show?.s===z.s?P.ink:P.white,border:`1.5px solid ${show?.s===z.s?P.ink:P.border}`,borderRadius:16,padding:"12px 6px",textAlign:"center",boxShadow:"0 1px 8px rgba(245,220,130,0.08)",transition:"all 0.15s"}}>
+          <p style={{fontSize:22,margin:"0 0 4px"}}>{z.e}</p>
+          <p style={{fontSize:8,letterSpacing:"0.1em",color:show?.s===z.s?P.butter:P.muted,fontFamily:SF,textTransform:"uppercase",margin:0}}>{z.s.slice(0,3)}</p>
+        </button>)}
+      </div>
+      {show&&sel&&<div className="ob" style={{background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,borderRadius:22,padding:"18px",border:`1px solid ${P.border}`,marginBottom:18}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <span style={{fontSize:32}}>{show.e}</span>
+          <div>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:24,color:P.ink,margin:0}}>{show.s}</p>
+            <p style={{fontSize:9,letterSpacing:"0.16em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",margin:0}}>{show.d}</p>
+          </div>
+        </div>
+        <p style={{fontSize:14,color:P.body,fontFamily:SF,lineHeight:1.65,margin:"0 0 10px"}}>{lang==="es"?show.es.t:show.en.t}</p>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.pinkD,margin:0}}>{lang==="es"?show.es.m:show.en.m}</p>
+      </div>}
+
+      {/* Elements */}
+      <GLabel>{T("THE FOUR ELEMENTS","LOS CUATRO ELEMENTOS")}</GLabel>
+      {["Fire","Earth","Air","Water"].map((el,i)=>{
+        const signs=ZODIAC.filter(z=>z.el===el);
+        return <div key={el} style={{background:i%2===0?P.butterL:P.pinkL,borderRadius:18,padding:"14px 18px",marginBottom:10,border:`1px solid ${i%2===0?P.border:P.borderP}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.ink,margin:0}}>{el} {signs.map(z=>z.e).join("")}</p>
+          </div>
+          <p style={{fontSize:13,color:P.body,fontFamily:SF,margin:"0 0 4px"}}>{lang==="es"?ELS[el].es:ELS[el].en}</p>
+          <p style={{fontSize:11,color:P.muted,fontFamily:SF,margin:0}}>{signs.map(z=>z.s).join(", ")}</p>
+        </div>;
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS TAB */
+function ProgressTab({lang,profile,cards}){
+  const [scores,setScores]=useState(()=>LS.get("celeste_scores",{clarity:7,belief:6,peace:8,alignment:6}));
+  const [saved,setSaved]=useState(false);
+  const T=(en,es)=>lang==="es"?es:en;
+  const saveScores = s => { setScores(s); LS.set("celeste_scores",s); setSaved(true); setTimeout(()=>setSaved(false),2000); };
+  const DIMS=lang==="es"?[{l:"Claridad",d:"¿Qué tan claramente sientes tu visión?",k:"clarity"},{l:"Creencia",d:"¿Cuánto crees que ya viene en camino?",k:"belief"},{l:"Paz",d:"¿Cuánta paz sientes con dónde estás?",k:"peace"},{l:"Alineación",d:"¿Qué tan alineadas están tus acciones con tu visión?",k:"alignment"}]:[{l:"Clarity",d:"How clearly can you feel your vision?",k:"clarity"},{l:"Belief",d:"How much do you believe it's on its way?",k:"belief"},{l:"Peace",d:"How much peace do you feel about where you are?",k:"peace"},{l:"Alignment",d:"How aligned are your daily actions with your vision?",k:"alignment"}];
+  const total=Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/4);
+  const insight=total>=8?T("You are in deep alignment. Your vibration is at its highest point. Keep creating, keep believing.","Estás en profunda alineación. Tu vibración está en su punto más alto. Sigue creando, sigue creyendo."):total>=6?T("You're progressing beautifully. Clarity arrives before belief — that's exactly right.","Estás progresando hermosamente. La claridad llega antes que la creencia — eso es exactamente correcto."):T("You're at the beginning of something real. Every time you return, every story you read, brings you closer.","Estás al comienzo de algo real. Cada vez que regresas, cada historia que lees, te acerca más.");
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 22px 110px"}}>
+      <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 6px"}}>{T("Progress","Progreso")}</h2>
+      <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 22px"}}>{T("Your manifestation evolves with every session.","Tu manifestación evoluciona con cada sesión.")}</p>
+
+      {/* Score display */}
+      <div style={{background:`linear-gradient(145deg,${P.butterL},${P.pinkL})`,borderRadius:28,padding:"30px 24px",marginBottom:20,textAlign:"center",boxShadow:`0 6px 24px rgba(245,220,130,0.20),0 2px 8px rgba(240,184,192,0.18)`}}>
+        <div style={{width:110,height:110,borderRadius:"50%",background:P.white,margin:"0 auto 16px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:`0 4px 18px rgba(245,220,130,0.25),0 2px 8px rgba(240,184,192,0.20)`}}>
+          <span style={{fontSize:38,fontFamily:PF,fontWeight:400,color:P.pinkD}}>{total}</span>
+          <span style={{fontSize:10,letterSpacing:"0.2em",color:P.muted,fontFamily:SF}}>/10</span>
+        </div>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:19,color:P.ink,margin:"0 0 10px"}}>{T("Alignment Score","Puntuación de Alineación")}</p>
+        <p style={{fontSize:13,color:P.body,fontFamily:SF,lineHeight:1.65,maxWidth:280,margin:"0 auto"}}>{insight}</p>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:22}}>
+        {[{n:cards.length,l:T("Stories","Historias")},{n:1,l:T("Days active","Días activa")},{n:`${total*10}%`,l:T("Aligned","Alineada")}].map((s,i)=>(
+          <div key={i} style={{background:i===1?P.pinkL:P.butterL,borderRadius:18,padding:"14px 10px",textAlign:"center",border:`1px solid ${i===1?P.borderP:P.border}`}}>
+            <p style={{fontFamily:PF,fontSize:26,fontWeight:400,color:i===1?P.pinkD:P.butterD,margin:"0 0 3px"}}>{s.n}</p>
+            <p style={{fontSize:9,letterSpacing:"0.14em",color:P.muted,margin:0,fontFamily:SF,textTransform:"uppercase"}}>{s.l}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Sliders */}
+      <GLabel>{T("CALIBRATE YOUR STATE","CALIBRA TU ESTADO")}</GLabel>
+      {DIMS.map(d=>(
+        <Card key={d.k} style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:17,color:P.ink,margin:0}}>{d.l}</p>
+            <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{fontFamily:PF,fontSize:16,color:P.ink}}>{scores[d.k]}</span>
+            </div>
+          </div>
+          <p style={{fontSize:12,color:P.muted,fontFamily:SF,margin:"0 0 12px"}}>{d.d}</p>
+          <input type="range" min={1} max={10} value={scores[d.k]} onChange={e=>{const s={...scores,[d.k]:Number(e.target.value)};saveScores(s);}} style={{width:"100%"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+            <span style={{fontSize:9,color:P.muted,fontFamily:SF}}>1</span>
+            <span style={{fontSize:9,color:P.muted,fontFamily:SF}}>10</span>
+          </div>
+        </Card>
+      ))}
+
+      {/* What to expect */}
+      <GLabel pink>{T("WHAT TO EXPECT","QUÉ ESPERAR")}</GLabel>
+      {[[T("Day 1–7","Día 1–7"),T("Your voice feels unfamiliar. Do it anyway.","Tu voz se siente extraña. Hazlo de todas formas.")],[T("Day 14","Día 14"),T("The words start to feel like yours.","Las palabras empiezan a sentirse tuyas.")],[T("Day 30","Día 30"),T("The shifts others notice before you do.","Los cambios que otros notan antes que tú.")],[T("Day 90","Día 90"),T("You become the person who already has it.","Te conviertes en la persona que ya lo tiene.")]].map(([d,txt],i)=>(
+        <div key={i} style={{display:"flex",gap:16,alignItems:"flex-start",marginBottom:12}}>
+          <span style={{fontSize:11,letterSpacing:"0.16em",color:P.butterD,fontFamily:SF,textTransform:"uppercase",flexShrink:0,marginTop:2,minWidth:54}}>{d}</span>
+          <p style={{fontFamily:PF,fontStyle:"italic",fontSize:16,color:P.ink,lineHeight:1.5,margin:0}}>{txt}</p>
+        </div>
+      ))}
+
+      <div style={{marginTop:16,textAlign:"center"}}>
+        <Btn variant="pink" label={saved?T("Saved ✓","Guardado ✓"):T("Save my state","Guardar mi estado")} onClick={()=>saveScores(scores)}/>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VISION BOARD TAB — mood board for manifestation images */
+function VisionBoard({lang}){
+  const [images,setImages]=useState(()=>LS.get("celeste_vboard",[]));
+  const [lightbox,setLightbox]=useState(null);
+  const fileRef=useRef(null);
+  const T=(en,es)=>lang==="es"?es:en;
+
+  const save = imgs => { setImages(imgs); LS.set("celeste_vboard", imgs); };
+
+  const onUpload=e=>{
+    const files=Array.from(e.target.files||[]);
+    files.forEach(f=>{
+      const r=new FileReader();
+      r.onload=()=>setImages(p=>{
+        const updated=[...p,{src:r.result,id:Date.now()+Math.random(),label:""}];
+        LS.set("celeste_vboard",updated);
+        return updated;
+      });
+      r.readAsDataURL(f);
+    });
+    e.target.value="";
+  };
+
+  const removeImage=id=>save(images.filter(i=>i.id!==id));
+
+  return (
+    <div style={{background:P.ivory,minHeight:"100vh",padding:"56px 22px 110px"}}>
+      <h2 style={{fontFamily:PF,fontWeight:400,fontStyle:"italic",fontSize:36,color:P.ink,margin:"0 0 6px"}}>{T("Vision Board","Tablero de Visión")}</h2>
+      <p style={{fontSize:13,color:P.muted,fontFamily:SF,margin:"0 0 22px",lineHeight:1.6}}>{T("Build your manifestation mood board. Every image is a declaration.","Construye tu tablero de manifestación. Cada imagen es una declaración.")}</p>
+
+      {/* Upload button */}
+      <input ref={fileRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={onUpload}/>
+      <button onClick={()=>fileRef.current&&fileRef.current.click()} style={{width:"100%",background:`linear-gradient(135deg,${P.butterL},${P.pinkL})`,border:`2px dashed ${P.borderP}`,borderRadius:22,padding:"28px 24px",marginBottom:20,display:"flex",flexDirection:"column",alignItems:"center",gap:10,cursor:"pointer",boxShadow:"none"}}>
+        <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:P.ink}}>+</div>
+        <p style={{fontFamily:PF,fontStyle:"italic",fontSize:18,color:P.ink,margin:0}}>{T("Add images to your board","Agrega imágenes a tu tablero")}</p>
+        <p style={{fontSize:12,color:P.muted,fontFamily:SF,margin:0}}>{T("Tap to upload from your camera roll","Toca para subir desde tu galería")}</p>
+      </button>
+
+      {/* Inspiration prompts */}
+      {images.length===0&&(
+        <div>
+          <GLabel>{T("WHAT TO ADD","QUÉ AGREGAR")}</GLabel>
+          {[
+            {i:"🏡", en:"Your dream home — every room, every detail",              es:"Tu hogar soñado — cada cuarto, cada detalle"},
+            {i:"💛", en:"The lifestyle you're calling in",                          es:"El estilo de vida que estás llamando"},
+            {i:"🌹", en:"Love, family, the people in your future",                 es:"Amor, familia, las personas en tu futuro"},
+            {i:"✦",  en:"Career milestones, brands you're building toward",        es:"Logros profesionales, marcas que construyes"},
+            {i:"✈️", en:"Travel — the cities, the hotels, the views",              es:"Viajes — las ciudades, los hoteles, las vistas"},
+            {i:"🌸", en:"How you want to feel — colors, textures, beauty",         es:"Cómo quieres sentirte — colores, texturas, belleza"},
+          ].map((tip,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:`1px solid ${P.border}`}}>
+              <span style={{fontSize:22,flexShrink:0}}>{tip.i}</span>
+              <p style={{fontFamily:PF,fontStyle:"italic",fontSize:15,color:P.ink,margin:0,lineHeight:1.4}}>{lang==="es"?tip.es:tip.en}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Masonry grid */}
+      {images.length>0&&(
+        <>
+          <GLabel pink>{T(`${images.length} IMAGE${images.length!==1?"S":""} · YOUR VISION`,`${images.length} IMAGEN${images.length!==1?"ES":""} · TU VISIÓN`)}</GLabel>
+          <div style={{columns:2,columnGap:10}}>
+            {images.map((img,i)=>(
+              <div key={img.id} className="fu" style={{breakInside:"avoid",marginBottom:10,position:"relative",borderRadius:18,overflow:"hidden",boxShadow:`0 3px 16px rgba(245,220,130,0.18)`}}>
+                <img src={img.src} onClick={()=>setLightbox(img)} style={{width:"100%",display:"block",borderRadius:18,cursor:"pointer"}} alt="vision"/>
+                {/* Remove button */}
+                <button onClick={()=>removeImage(img.id)} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(30,18,8,0.65)",border:"none",color:"#fff",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>×</button>
+                {/* Pink icing overlay strip */}
+                <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(to top,rgba(240,184,192,0.70),transparent)",padding:"20px 10px 8px",borderBottomLeftRadius:18,borderBottomRightRadius:18}}>
+                  <p style={{fontFamily:PF,fontStyle:"italic",fontSize:11,color:"#fff",margin:0,textShadow:"0 1px 4px rgba(30,18,8,0.4)"}}>{T("My vision","Mi visión")} ✦</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Add more */}
+          <button onClick={()=>fileRef.current&&fileRef.current.click()} style={{width:"100%",background:"rgba(255,255,255,0.72)",border:`1.5px dashed ${P.borderP}`,borderRadius:18,padding:"16px",marginTop:8,fontSize:14,color:P.pinkD,fontFamily:PF,fontStyle:"italic",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            + {T("Add more images","Agregar más imágenes")}
+          </button>
+        </>
+      )}
+
+      {/* Lightbox */}
+      {lightbox&&(
+        <div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(30,18,8,0.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:20}}>
+          <div style={{position:"relative",maxWidth:"100%",maxHeight:"100%"}}>
+            <img src={lightbox.src} style={{maxWidth:"100%",maxHeight:"85vh",borderRadius:18,display:"block"}} alt="vision"/>
+            <button onClick={()=>setLightbox(null)} style={{position:"absolute",top:-14,right:-14,width:36,height:36,borderRadius:"50%",background:P.butter,border:"none",fontSize:16,color:P.ink,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>×</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SPLASH SCREEN — Two-act cinematic intro
+   Act 1: Cathedral hallway — slow walk toward the moon (7s)
+   Act 2: Starburst — zooms in from moon, Celeste title reveals
+ */
+const HALL_IMG = "https://celeste-voice-proxy.vercel.app/img1.jpg";
+const STAR_IMG = "https://celeste-voice-proxy.vercel.app/img2.jpg";
+
+const SPLASH_CSS = `
+@keyframes hallWalk{
+  0%  {transform:scale(1.00) translateY(0px);   filter:brightness(0.50);}
+  20% {transform:scale(1.06) translateY(-8px);  filter:brightness(0.58);}
+  45% {transform:scale(1.16) translateY(-20px); filter:brightness(0.68);}
+  70% {transform:scale(1.30) translateY(-36px); filter:brightness(0.82);}
+  88% {transform:scale(1.48) translateY(-52px); filter:brightness(0.96);}
+  100%{transform:scale(1.72) translateY(-72px); filter:brightness(1.15);opacity:0;}
+}
+@keyframes vigWalk{
+  0%  {opacity:0.72;}40%{opacity:0.48;}80%{opacity:0.25;}100%{opacity:0.10;}
+}
+@keyframes starZoomIn{
+  0%  {opacity:0;transform:scale(1.55);}
+  40% {opacity:1;transform:scale(1.12);}
+  100%{opacity:1;transform:scale(1.00);}
+}
+@keyframes sTitleReveal{
+  0%  {opacity:0;transform:translateY(42px) scale(0.82);letter-spacing:0.32em;}
+  55% {opacity:1;transform:translateY(-5px) scale(1.03);}
+  100%{opacity:1;transform:translateY(0) scale(1);letter-spacing:0.06em;}
+}
+@keyframes sLineGrow{from{width:0;opacity:0;}to{width:108px;opacity:1;}}
+@keyframes sSubIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes sEyeIn{0%{opacity:0;letter-spacing:1.0em;}100%{opacity:1;letter-spacing:0.55em;}}
+@keyframes sTitleGlow{
+  0%,100%{text-shadow:2px 2px 20px rgba(200,140,50,0.40),0 0 0px rgba(245,220,130,0);}
+  50%    {text-shadow:2px 2px 20px rgba(200,140,50,0.55),0 0 55px rgba(245,220,130,0.65),0 0 110px rgba(240,184,192,0.35);}
+}
+@keyframes sGlitter{
+  0%  {transform:translateY(0) translateX(0) scale(1.2);opacity:0.88;}
+  100%{transform:translateY(-120px) translateX(var(--dx,0px)) scale(0.05);opacity:0;}
+}
+@keyframes sTwinkle{0%,100%{opacity:0.18;transform:scale(0.7);}50%{opacity:0.95;transform:scale(1.35);}}
+@keyframes sCornerIn{from{opacity:0;}to{opacity:0.68;}}
+@keyframes sSplashExit{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.05);}}
+`;
+
+const S_GLITTERS = Array.from({length:22}).map((_,i)=>({
+  l:(14+i*7.4%74).toFixed(1), t:(20+i*11.9%58).toFixed(1),
+  s:(2.4+i*0.36%3.6).toFixed(1),
+  dx:((i%2===0?1:-1)*(8+i*4.3%22)).toFixed(1)+"px",
+  col:i%2===0?"#F5DC82":"#F0B8C0",
+  dur:(1.8+i*0.17%2.2).toFixed(2), del:(0.4+i*0.13).toFixed(2),
+}));
+const S_CORNERS=[{top:0,left:0,rot:0},{top:0,right:0,rot:90},{bottom:0,right:0,rot:180},{bottom:0,left:0,rot:270}];
+
+function SplashScreen({ onDone }) {
+  const [act, setAct]         = useState(0);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(()=>setAct(1),       7000);
+    const t2 = setTimeout(()=>setAct(2),       7900);
+    const t3 = setTimeout(()=>setExiting(true),10200);
+    const t4 = setTimeout(()=>onDone(),        10900);
+    return ()=>[t1,t2,t3,t4].forEach(clearTimeout);
+  }, [onDone]);
+
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:9999,overflow:"hidden",background:"#0d0905",
+      animation:exiting?"sSplashExit 0.8s ease forwards":"none",
+    }}>
+      <style>{SPLASH_CSS}</style>
+
+      {/* ACT 1 — hallway walk */}
+      <div style={{
+        position:"absolute",inset:0,zIndex:1,
+        opacity:act>=1?0:1,
+        transition:act===1?"opacity 1.4s ease":"none",
+      }}>
+        <div style={{
+          position:"absolute",inset:"-5% -5%",
+          backgroundImage:`url(${HALL_IMG})`,
+          backgroundSize:"cover",backgroundPosition:"center 28%",
+          animation:act===0?"hallWalk 7.2s cubic-bezier(0.25,0.1,0.25,1) forwards":"none",
+        }}/>
+        <div style={{
+          position:"absolute",inset:0,
+          background:"radial-gradient(ellipse 56% 60% at 50% 36%,transparent 0%,rgba(4,2,1,0.78) 100%)",
+          animation:act===0?"vigWalk 7.2s ease forwards":"none",
+        }}/>
+        <div style={{
+          position:"absolute",bottom:0,left:0,right:0,height:"40%",
+          background:"linear-gradient(to top,rgba(200,130,40,0.18) 0%,rgba(245,180,80,0.08) 40%,transparent 100%)",
+        }}/>
+      </div>
+
+      {/* ACT 2 — starburst + title */}
+      <div style={{
+        position:"absolute",inset:0,zIndex:2,
+        opacity:act>=1?1:0,
+        transition:"opacity 1.4s ease",
+        display:"flex",alignItems:"center",justifyContent:"center",
+      }}>
+        <div style={{
+          position:"absolute",inset:0,
+          backgroundImage:`url(${STAR_IMG})`,
+          backgroundSize:"cover",backgroundPosition:"center center",
+          animation:act>=1?"starZoomIn 1.8s cubic-bezier(0.16,1,0.3,1) both":"none",
+        }}/>
+        <div style={{
+          position:"absolute",inset:0,
+          background:"radial-gradient(ellipse 80% 80% at 50% 50%,rgba(253,246,204,0.10) 0%,rgba(240,180,190,0.14) 100%)",
+        }}/>
+
+        {act>=1 && S_GLITTERS.map((g,i)=>(
+          <div key={i} style={{
+            position:"absolute",left:`${g.l}%`,top:`${g.t}%`,
+            width:`${g.s}px`,height:`${g.s}px`,borderRadius:"50%",
+            background:g.col,boxShadow:`0 0 ${parseFloat(g.s)*2.5}px ${g.col}`,
+            "--dx":g.dx,
+            animation:`sGlitter ${g.dur}s ease ${g.del}s infinite`,
+            pointerEvents:"none",
+          }}/>
+        ))}
+
+        {act>=1 && Array.from({length:26}).map((_,i)=>(
+          <div key={i} style={{
+            position:"absolute",
+            left:`${8+(i*13.8%84)}%`,top:`${5+(i*11.2%84)}%`,
+            width:i%5===0?4.5:i%3===0?3:2,height:i%5===0?4.5:i%3===0?3:2,
+            borderRadius:"50%",
+            background:i%2===0?"rgba(255,248,220,0.96)":"rgba(255,228,238,0.90)",
+            boxShadow:`0 0 ${i%5===0?14:7}px ${i%2===0?"#F5DC82":"#F0B8C0"}`,
+            animation:`sTwinkle ${1.1+i*0.19%2.6}s ease-in-out ${i*0.15}s infinite`,
+            pointerEvents:"none",
+          }}/>
+        ))}
+
+        {act>=2 && (
+          <div style={{
+            position:"absolute",zIndex:20,textAlign:"center",
+            display:"flex",flexDirection:"column",alignItems:"center",
+            padding:"0 28px",userSelect:"none",
+          }}>
+
+            {/* Bilingual eyebrow */}
+            <div style={{
+              display:"flex",alignItems:"center",gap:12,marginBottom:14,
+              animation:"sEyeIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.1s both",
+            }}>
+              <span style={{fontSize:10,letterSpacing:"0.45em",color:"rgba(255,248,220,0.85)",fontFamily:SF,textTransform:"uppercase",textShadow:"0 1px 12px rgba(180,120,30,0.60)"}}>WELCOME</span>
+              <span style={{fontSize:12,color:"rgba(245,220,130,0.70)",fontFamily:SF}}>✦</span>
+              <span style={{fontSize:10,letterSpacing:"0.45em",color:"rgba(255,248,220,0.85)",fontFamily:SF,textTransform:"uppercase",textShadow:"0 1px 12px rgba(180,120,30,0.60)"}}>BIENVENIDA</span>
+            </div>
+
+            {/* CELESTE */}
+            <div style={{
+              background:"rgba(253,246,204,0.08)",
+              backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",
+              borderRadius:28,padding:"6px 32px 14px",marginBottom:10,
+            }}>
+              <h1 style={{
+                fontSize:92,fontWeight:400,fontStyle:"italic",
+                color:"rgba(255,252,235,0.98)",
+                fontFamily:PF,lineHeight:1.0,margin:0,
+                animation:"sTitleReveal 1.2s cubic-bezier(0.16,1,0.3,1) both, sTitleGlow 3s ease-in-out 1.5s infinite",
+              }}>Celeste</h1>
+            </div>
+
+            {/* Shimmer divider */}
+            <div style={{
+              height:1.5,borderRadius:2,overflow:"hidden",
+              background:"linear-gradient(90deg,transparent,rgba(245,220,130,0.92),rgba(240,184,192,0.82),transparent)",
+              marginBottom:18,
+              animation:"sLineGrow 1s ease 0.5s both",
+            }}/>
+
+            {/* Tagline — bilingual stacked */}
+            <div style={{
+              animation:"sSubIn 0.7s ease 0.65s both",
+              background:"rgba(253,246,204,0.62)",
+              backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",
+              borderRadius:20,padding:"10px 22px",marginBottom:10,
+              display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+            }}>
+              <p style={{fontSize:14,color:"#2C1A10",fontFamily:SF,letterSpacing:"0.06em",lineHeight:1.5,margin:0}}>
+                Your manifestation companion
+              </p>
+              <div style={{width:28,height:1,background:"rgba(44,26,16,0.22)",borderRadius:2}}/>
+              <p style={{fontSize:14,color:"#2C1A10",fontFamily:SF,letterSpacing:"0.06em",lineHeight:1.5,margin:0}}>
+                Tu compañera de manifestación
+              </p>
+            </div>
+
+            {/* Descriptor pills — bilingual */}
+            <div style={{
+              animation:"sSubIn 0.7s ease 0.88s both",
+              display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+            }}>
+              <p style={{
+                fontFamily:PF,fontStyle:"italic",fontSize:16,
+                color:"#2C1A10",letterSpacing:"0.07em",
+                background:"rgba(253,246,204,0.56)",
+                backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",
+                borderRadius:50,padding:"4px 18px",margin:0,
+              }}>Bilingual · Personal · Celestial</p>
+              <p style={{
+                fontFamily:PF,fontStyle:"italic",fontSize:16,
+                color:"#2C1A10",letterSpacing:"0.07em",
+                background:"rgba(253,246,204,0.50)",
+                backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",
+                borderRadius:50,padding:"4px 18px",margin:0,
+              }}>Bilingüe · Personalizada · Celestial</p>
+            </div>
+
+          </div>
+        )}
+
+        {act>=1 && S_CORNERS.map((pos,i)=>(
+          <div key={i} style={{
+            position:"absolute",width:62,height:62,
+            top:pos.top,left:pos.left,right:pos.right,bottom:pos.bottom,
+            animation:`sCornerIn 1.2s ease ${0.9+i*0.12}s both`,
+            pointerEvents:"none",
+          }}>
+            <svg width="62" height="62" viewBox="0 0 62 62" fill="none"
+              style={{transform:`rotate(${pos.rot}deg)`,display:"block"}}>
+              <path d="M4 4 L28 4 L4 28" stroke="rgba(245,220,130,0.78)" strokeWidth="1.4" fill="none"/>
+              <path d="M4 4 L13 4 L4 13" stroke="rgba(240,184,192,0.88)" strokeWidth="2.2" fill="none"/>
+              <path d="M4 4 L32 4" stroke="rgba(245,220,130,0.40)" strokeWidth="0.7" fill="none"/>
+              <path d="M4 4 L4 32" stroke="rgba(245,220,130,0.40)" strokeWidth="0.7" fill="none"/>
+              <circle cx="4" cy="4" r="3.2" fill="rgba(245,220,130,0.92)"/>
+              <circle cx="28" cy="4" r="1.6" fill="rgba(240,184,192,0.78)"/>
+              <circle cx="4" cy="28" r="1.6" fill="rgba(240,184,192,0.78)"/>
+            </svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── localStorage helpers ────────────────────────────────────── */
+const LS = {
+  get: (key, fallback) => {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set: (key, val) => {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  },
+  clear: () => {
+    try { ["celeste_profile","celeste_cards","celeste_ready","celeste_tab","celeste_vboard","celeste_scores"].forEach(k=>localStorage.removeItem(k)); } catch {}
+  },
+};
+
+
+/* ── Pre-saved profiles for both languages ── */
+const PROFILE_EN = {
+  lang:"en", name:"Lay",
+  home:"A penthouse in Miami Beach, ocean view",
+  love:"A devoted partner who adores me",
+  career:"I run my own luxury brand, passive income flows",
+  morning:"I wake up without an alarm, matcha, movement, golden light",
+  feeling:"Deeply at peace, magnetic, loved",
+  vision:"I manifest a penthouse in Miami Beach with ocean views, a devoted partner who adores me, my own luxury brand with passive income, waking up without an alarm to matcha and golden light, feeling deeply at peace, magnetic, and loved. Faith, travel, creative studio, close friendships.",
+  extra:"Faith, travel, creative studio, close friendships",
+  belief:4, blocks:[], practiceTime:"7:00 AM", pronouns:"she / her",
+};
+
+const PROFILE_ES = {
+  lang:"es", name:"Lay",
+  home:"Un penthouse en Miami Beach, vista al mar",
+  love:"Una pareja devota que me adora",
+  career:"Tengo mi propia marca de lujo, ingresos pasivos fluyen",
+  morning:"Me despierto sin alarma, matcha, movimiento, luz dorada",
+  feeling:"Profundamente en paz, magnética, amada",
+  vision:"Manifestaría amor profundo, paz, un penthouse en Miami Beach con vista al mar, mi propia marca de lujo con ingresos pasivos, despertar sin alarma con matcha y luz dorada, sintiéndome en paz, magnética y amada. Fe, viajes, estudio creativo, amistades cercanas.",
+  extra:"Fe, viajes, estudio creativo, amistades cercanas",
+  belief:4, blocks:[], practiceTime:"7:00 AM", pronouns:"ella / ella",
+};
+
+/* Seed both profiles on first load */
+(()=>{
+  try {
+    if (!localStorage.getItem("celeste_profile_en")) {
+      localStorage.setItem("celeste_profile_en", JSON.stringify(PROFILE_EN));
+    }
+    if (!localStorage.getItem("celeste_profile_es")) {
+      localStorage.setItem("celeste_profile_es", JSON.stringify(PROFILE_ES));
+    }
+  } catch {}
+})();
+
+const T_IDS  = ["home","stories","affirm","prayer","vision","progress"];
+const T_ICONS = ["⌂","✦","♡","✝","🖼","◎"];
+const T_EN   = ["Home","Stories","Affirm","Prayer","Vision","Progress"];
+const T_ES   = ["Inicio","Historias","Afirmar","Oración","Visión","Progreso"];
+
+function Celeste(){
+  const [splash,   setSplash]   = useState(true);
+  const [lang,     setLang]     = useState(() => LS.get("celeste_lang", null));
+  const [ready,    setReady]    = useState(() => LS.get("celeste_ready", false));
+  const [profile,  setProfile]  = useState(() => {
+    const saved = LS.get("celeste_lang", null);
+    if (saved) return LS.get(`celeste_profile_${saved}`, saved==="es" ? PROFILE_ES : PROFILE_EN);
+    return {};
+  });
+  const [cards,    setCards]    = useState(() => {
+    const l = LS.get("celeste_lang", null);
+    return l ? LS.get(`celeste_cards_${l}`, []) : [];
+  });
+  const [tab,      setTab]      = useState(() => LS.get("celeste_tab", "home"));
+  const [player,   setPlayer]   = useState(null);
+  const [editMode, setEditMode] = useState(false);
+
+  const onSplashDone = useCallback(() => setSplash(false), []);
+
+  /* Persist profile + cards keyed by language */
+  useEffect(() => {
+    if (lang) {
+      LS.set(`celeste_profile_${lang}`, profile);
+      LS.set("celeste_lang", lang);
+    }
+  }, [profile, lang]);
+
+  useEffect(() => {
+    if (lang) LS.set(`celeste_cards_${lang}`, cards);
+  }, [cards, lang]);
+
+  useEffect(() => { LS.set("celeste_tab",   tab);   }, [tab]);
+  useEffect(() => { LS.set("celeste_ready", ready); }, [ready]);
+
+  const addCard = useCallback(c => setCards(p => {
+    const updated = [c, ...p];
+    if (lang) LS.set(`celeste_cards_${lang}`, updated);
+    return updated;
+  }), [lang]);
+
+  /* User picks a language — load their saved profile for that language */
+  const pickLang = useCallback((l) => {
+    setLang(l);
+    LS.set("celeste_lang", l);
+    /* First check for a completed profile, then partial, then default */
+    const saved = LS.get(`celeste_profile_${l}`, null);
+    const partial = (() => { try { const p = localStorage.getItem(`celeste_partial_${l}`); return p ? JSON.parse(p) : null; } catch { return null; } })();
+    const base = saved || partial || (l==="es" ? PROFILE_ES : PROFILE_EN);
+    setProfile({...base, lang:l});
+    const savedCards = LS.get(`celeste_cards_${l}`, []);
+    setCards(savedCards);
+    const isComplete = saved && saved.name && saved.vision;
+    setReady(!!isComplete);
+  }, []);
+
+  const onComplete = useCallback(p => {
+    const merged = {...p, lang};
+    setProfile(merged);
+    LS.set(`celeste_profile_${lang}`, merged);
+    setReady(true);
+    LS.set("celeste_ready", true);
+    setEditMode(false);
+  }, [lang]);
+
+  /* ── Render logic ── */
+
+  /* 1. Splash always plays first */
+  if (splash) return <SplashScreen onDone={onSplashDone}/>;
+
+  /* 2. Language picker — shown if no language chosen yet */
+  if (!lang) return (
+    <div style={{minHeight:"100vh",background:`linear-gradient(145deg,#FDF6CC,#FEFAF3,#FEF2F5,#FBF0B2,#FAE5E8)`,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 36px"}}>
+      <style>{G}</style>
+      <div style={{textAlign:"center",marginBottom:48}}>
+        <div style={{width:68,height:68,borderRadius:"50%",background:`linear-gradient(135deg,${P.butter},${P.pink})`,
+          margin:"0 auto 18px",display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:26,boxShadow:`0 6px 24px rgba(245,220,130,0.42)`}}>✦</div>
+        <h1 style={{fontSize:62,fontWeight:400,fontStyle:"italic",color:P.ink,margin:"0 0 8px",fontFamily:PF}}>Celeste</h1>
+        <div style={{width:48,height:2,background:`linear-gradient(90deg,${P.butter},${P.pink})`,margin:"0 auto 14px",borderRadius:2}}/>
+        <p style={{fontSize:13,color:P.muted,fontFamily:SF,letterSpacing:"0.08em"}}>Your manifestation companion</p>
+      </div>
+      <div style={{width:"100%",maxWidth:300,display:"flex",flexDirection:"column",gap:14}}>
+        <button onClick={()=>pickLang("en")} style={{
+          background:"rgba(255,255,255,0.85)",border:`2px solid ${P.butter}`,
+          borderRadius:20,padding:"20px 24px",cursor:"pointer",
+          boxShadow:`0 4px 20px rgba(245,220,130,0.22)`,
+          display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        }}>
+          <span style={{fontSize:28}}>🇺🇸</span>
+          <div>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:20,color:P.ink,margin:0}}>English</p>
+            <p style={{fontSize:11,color:P.muted,fontFamily:SF,margin:0}}>Continue in English →</p>
+          </div>
+        </button>
+        <button onClick={()=>pickLang("es")} style={{
+          background:"rgba(255,255,255,0.85)",border:`2px solid ${P.pink}`,
+          borderRadius:20,padding:"20px 24px",cursor:"pointer",
+          boxShadow:`0 4px 20px rgba(240,184,192,0.22)`,
+          display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        }}>
+          <span style={{fontSize:28}}>🇲🇽</span>
+          <div>
+            <p style={{fontFamily:PF,fontStyle:"italic",fontSize:20,color:P.ink,margin:0}}>Español</p>
+            <p style={{fontSize:11,color:P.muted,fontFamily:SF,margin:0}}>Continuar en Español →</p>
+          </div>
+        </button>
+      </div>
+      <p style={{fontSize:10,color:P.muted,fontFamily:SF,marginTop:28,letterSpacing:"0.1em",textAlign:"center"}}>
+        You can change language anytime via ⚙ settings
+      </p>
+    </div>
+  );
+
+  /* 3. Onboarding — if profile not complete or editing */
+  if (!ready || editMode) return (
+    <OnboardingScreen
+      onComplete={onComplete}
+      onSkip={() => {
+        setEditMode(false);
+        if (!ready) {
+          const p = lang==="es" ? PROFILE_ES : PROFILE_EN;
+          setProfile({...p, lang});
+          setReady(true);
+        }
+      }}
+      existingProfile={editMode ? profile : (ready ? profile : null)}
+    />
+  );
+
+  /* 4. Player */
+  if (player) {
+    const others = cards.filter(c => c.id !== player.id).slice(0,8);
+    return <PlayerScreen lang={lang} card={player} others={others}
+      onClose={()=>setPlayer(null)} onSwitch={c=>setPlayer(c)}/>;
+  }
+
+  /* 5. Main app */
+  return (
+    <div style={{maxWidth:480,margin:"0 auto",background:P.ivory,minHeight:"100vh",position:"relative"}}>
+      <style>{G}</style>
+
+      {/* Settings gear */}
+      <button onClick={()=>setEditMode(true)} style={{position:"fixed",top:14,right:16,zIndex:50,
+        background:"rgba(255,255,255,0.82)",border:`1.5px solid ${P.borderP}`,
+        borderRadius:50,width:36,height:36,display:"flex",alignItems:"center",
+        justifyContent:"center",fontSize:16,color:P.pinkD,
+        boxShadow:"0 2px 10px rgba(240,184,192,0.20)"}}>⚙</button>
+
+      {/* Language switcher pill */}
+      <button onClick={()=>{ setLang(null); LS.set("celeste_lang",null); }} style={{
+        position:"fixed",top:14,left:16,zIndex:50,
+        background:"rgba(255,255,255,0.82)",border:`1.5px solid ${P.border}`,
+        borderRadius:50,padding:"6px 14px",fontSize:11,color:P.butterD,
+        fontFamily:SF,letterSpacing:"0.1em",cursor:"pointer",
+        boxShadow:"0 2px 10px rgba(245,220,130,0.18)"}}>
+        {lang==="es" ? "🇲🇽 ES" : "🇺🇸 EN"}
+      </button>
+
+      {tab==="home"      && <HomeTab      lang={lang} name={profile.name} profile={profile} cards={cards} onOpen={c=>setPlayer(c)} onGoStories={()=>setTab("stories")}/>}
+      {tab==="stories"   && <StoriesTab   lang={lang} profile={profile} cards={cards} addCard={addCard} onOpen={c=>setPlayer(c)}/>}
+      {tab==="affirm"    && <AffirmTab    lang={lang} profile={profile}/>}
+      {tab==="prayer"    && <PrayerTab    lang={lang}/>}
+      {tab==="vision"    && <VisionBoard  lang={lang}/>}
+      {tab==="progress"  && <ProgressTab  lang={lang} profile={profile} cards={cards}/>}
+
+      <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
+        width:"100%",maxWidth:480,background:"rgba(254,250,243,0.97)",
+        backdropFilter:"blur(22px)",WebkitBackdropFilter:"blur(22px)",
+        borderTop:`1px solid ${P.border}`,display:"flex",
+        justifyContent:"space-around",padding:"9px 0 22px",zIndex:40}}>
+        {T_IDS.map((id,i)=>(
+          <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",
+            display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 6px"}}>
+            <span style={{fontSize:18,color:tab===id?P.pinkD:P.muted,transition:"color 0.2s"}}>{T_ICONS[i]}</span>
+            <span style={{fontSize:8,letterSpacing:"0.08em",color:tab===id?P.pinkD:P.muted,
+              fontFamily:SF,transition:"color 0.2s",textTransform:"uppercase"}}>
+              {(lang==="es"?T_ES:T_EN)[i]}
+            </span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Celeste));
+</script>
+</body>
+</html>
