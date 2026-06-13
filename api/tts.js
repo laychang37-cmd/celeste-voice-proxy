@@ -1,59 +1,35 @@
-export const config = { runtime: "edge" };
-
-const RACHEL = "21m00Tcm4TlvDq8ikWAM";
-const MODEL  = "eleven_multilingual_v2";
-
-export default async function handler(req) {
-  const origin = req.headers.get("origin") || "*";
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin":  "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
+    return res.status(200).end();
+  }
+
+  if (req.method === "GET") {
+    return res.status(200).json({ status: "ok", message: "Celeste voice proxy is running" });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-    });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  let text, lang;
-  try {
-    const body = await req.json();
-    text = body.text;
-    lang = body.lang || "en";
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-    });
-  }
+  const text = req.body?.text;
+  const lang = req.body?.lang || "en";
 
   if (!text) {
-    return new Response(JSON.stringify({ error: "No text provided" }), {
-      status: 400,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-    });
+    return res.status(400).json({ error: "No text provided" });
   }
 
   const key = process.env.ELEVEN_KEY;
   if (!key) {
-    return new Response(JSON.stringify({ error: "ELEVEN_KEY not set" }), {
-      status: 500,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-    });
+    return res.status(500).json({ error: "ELEVEN_KEY not set in Vercel environment variables" });
   }
 
   try {
-    const resp = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${RACHEL}?output_format=mp3_44100_128`,
+    const response = await fetch(
+      "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM?output_format=mp3_44100_128",
       {
         method: "POST",
         headers: {
@@ -62,40 +38,30 @@ export default async function handler(req) {
         },
         body: JSON.stringify({
           text: text.slice(0, 5000),
-          model_id: MODEL,
+          model_id: "eleven_multilingual_v2",
           language_code: lang === "es" ? "es" : "en",
           voice_settings: {
-            stability:         0.48,
-            similarity_boost:  0.82,
-            style:             0.28,
+            stability: 0.48,
+            similarity_boost: 0.82,
+            style: 0.28,
             use_speaker_boost: true,
           },
         }),
       }
     );
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      return new Response(
-        JSON.stringify({ error: err?.detail?.message || `ElevenLabs error ${resp.status}` }),
-        { status: resp.status, headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" } }
-      );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      const msg = err?.detail?.message || err?.detail?.status || "ElevenLabs error " + response.status;
+      return res.status(response.status).json({ error: msg });
     }
 
-    const audio = await resp.arrayBuffer();
-    return new Response(audio, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type":   "audio/mpeg",
-        "Cache-Control":  "no-store",
-      },
-    });
+    const buffer = await response.arrayBuffer();
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).send(Buffer.from(buffer));
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-    });
+    return res.status(500).json({ error: e.message || "Unknown error" });
   }
 }
