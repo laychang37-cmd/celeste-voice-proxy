@@ -9,39 +9,11 @@ export default async function handler(req, res) {
 
   const text = req.body?.text;
   const lang = req.body?.lang || "en";
-  const chunk = req.body?.chunk || 0;      /* which chunk to generate */
-  const chunkSize = req.body?.chunkSize || 800;
 
   if (!text) return res.status(400).json({ error: "No text provided" });
 
   const key = process.env.ELEVEN_KEY;
   if (!key) return res.status(500).json({ error: "ELEVEN_KEY not set" });
-
-  /* Split text into chunks at sentence boundaries */
-  function splitChunks(text, size) {
-    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
-    const chunks = [];
-    let current = "";
-    for (const s of sentences) {
-      if (current.length + s.length > size && current) {
-        chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
-      }
-    }
-    if (current.trim()) chunks.push(current.trim());
-    return chunks;
-  }
-
-  const chunks = splitChunks(text, chunkSize);
-  const totalChunks = chunks.length;
-
-  if (chunk >= totalChunks) {
-    return res.status(200).json({ done: true, totalChunks });
-  }
-
-  const textToSpeak = chunks[chunk];
 
   try {
     const response = await fetch(
@@ -53,7 +25,7 @@ export default async function handler(req, res) {
           "xi-api-key": key,
         },
         body: JSON.stringify({
-          text: textToSpeak,
+          text: text.slice(0, 5000),
           model_id: "eleven_turbo_v2_5",
           language_code: lang === "es" ? "es" : "en",
           voice_settings: {
@@ -73,11 +45,8 @@ export default async function handler(req, res) {
     }
 
     const buffer = await response.arrayBuffer();
-    /* Send audio with chunk metadata in headers */
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "no-store");
-    res.setHeader("X-Chunk", chunk);
-    res.setHeader("X-Total-Chunks", totalChunks);
     return res.status(200).send(Buffer.from(buffer));
 
   } catch (e) {
