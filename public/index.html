@@ -866,82 +866,51 @@ function useCelesteVoice(lang) {
     setProgress(0);
     setPlaying(false);
     setPaused(false);
-    let chunkIndex = 0;
-    let totalChunks = 1;
-    let cancelled = false;
-    const cancelRef2 = { current: false };
-    const playNext = async () => {
-      if (cancelRef2.current) return;
-      try {
-        const res = await fetch(PROXY_URL + "/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, lang, chunk: chunkIndex, chunkSize: 800 })
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setError((err == null ? void 0 : err.error) || "Error " + res.status);
-          setLoading(false);
-          return;
-        }
-        const ct = res.headers.get("Content-Type") || "";
-        if (ct.includes("application/json")) {
-          setPlaying(false);
-          setProgress(1);
-          setLoading(false);
-          return;
-        }
-        const tc = res.headers.get("X-Total-Chunks");
-        if (tc) totalChunks = parseInt(tc);
-        const blob = await res.blob();
-        if (blob.size < 100) {
-          setPlaying(false);
-          setProgress(1);
-          setLoading(false);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        blobRef.current = url;
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.ontimeupdate = () => {
-          if (audio.duration) {
-            const pct = chunkIndex / totalChunks + audio.currentTime / audio.duration / totalChunks;
-            setProgress(Math.min(pct, 1));
-          }
-        };
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          chunkIndex++;
-          if (!cancelRef2.current) {
-            if (chunkIndex >= totalChunks) {
-              setPlaying(false);
-              setProgress(1);
-              setLoading(false);
-            } else {
-              playNext();
-            }
-          }
-        };
-        audio.onerror = () => {
-          setError("Playback error.");
-          setPlaying(false);
-          setLoading(false);
-        };
+    try {
+      const res = await fetch(PROXY_URL + "/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.slice(0, 5e3), lang })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError((err == null ? void 0 : err.error) || "Error " + res.status);
         setLoading(false);
-        setPlaying(true);
-        await audio.play().catch(() => {
-          setPlaying(false);
-          setError(lang === "es" ? "Toca \u25B6 para iniciar." : "Tap \u25B6 to start.");
-        });
-      } catch (e) {
-        if (!cancelRef2.current) {
-          setError("Network error \u2014 check your connection");
-          setLoading(false);
-        }
+        return;
       }
-    };
-    playNext();
+      const blob = await res.blob();
+      if (blob.size < 100) {
+        setError("No audio received");
+        setLoading(false);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      blobRef.current = url;
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.ontimeupdate = () => {
+        if (audio.duration) setProgress(audio.currentTime / audio.duration);
+      };
+      audio.onended = () => {
+        setPlaying(false);
+        setProgress(1);
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setError("Playback error.");
+        setPlaying(false);
+        setLoading(false);
+      };
+      setLoading(false);
+      setPlaying(true);
+      await audio.play().catch(() => {
+        setPlaying(false);
+        setError(lang === "es" ? "Toca \u25B6 para iniciar." : "Tap \u25B6 to start.");
+      });
+    } catch (e) {
+      setError("Network error \u2014 check your connection");
+      setLoading(false);
+    }
   }, [lang, cleanup]);
   useEffect(() => () => cleanup(), [cleanup]);
   return { speak, pause, resume, stop, playing, paused, loading, progress, error };
