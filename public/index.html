@@ -27,44 +27,21 @@ body{background:#FDF6CC;font-family:'Georgia',serif;}
   <p class="err" id="errmsg"></p>
 </div>
 <div id="root"></div>
-
 <script>
-function showErr(msg){
-  var e=document.getElementById('errmsg');
-  if(e){e.style.display='block';e.textContent=msg;}
-  document.querySelector('.spinner').style.display='none';
-}
-
-// Load a script from multiple CDNs with fallback
-function loadScript(urls, onDone, onFail) {
-  var i = 0;
-  function tryNext() {
-    if (i >= urls.length) { onFail(); return; }
-    var s = document.createElement('script');
-    s.src = urls[i++];
-    s.crossOrigin = 'anonymous';
-    s.onload = onDone;
-    s.onerror = tryNext;
-    document.head.appendChild(s);
-  }
-  tryNext();
-}
-
-// Step 1: load React
+function showErr(msg){var e=document.getElementById('errmsg');if(e){e.style.display='block';e.textContent=msg;}document.querySelector('.spinner').style.display='none';}
+function loadScript(urls,onDone,onFail){var i=0;function tryNext(){if(i>=urls.length){onFail();return;}var s=document.createElement('script');s.src=urls[i++];s.crossOrigin='anonymous';s.onload=onDone;s.onerror=tryNext;document.head.appendChild(s);}tryNext();}
 loadScript([
   'https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://unpkg.com/react@18/umd/react.production.min.js'
-], function() {
-  // Step 2: load ReactDOM
+],function(){
   loadScript([
     'https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
     'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'
-  ], function() {
-    // Step 3: run app
-    try {
-      const { useState, useEffect, useRef, useCallback } = React;
+  ],function(){
+    try{
+const { useState, useEffect, useRef, useCallback } = React;
 const G = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -994,7 +971,7 @@ function VoiceBar({ lang, text }) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center"
-  } }, loading ? /* @__PURE__ */ React.createElement("span", { style: { width: 19, height: 19, border: `2.5px solid rgba(44,26,16,0.18)`, borderTopColor: P.ink, borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" } }) : /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20, lineHeight: 1, color: P.ink } }, playing ? "\u23F8" : "\u25B6")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", gap: 5 } }, /* @__PURE__ */ React.createElement("div", { style: { height: 4, background: "rgba(245,220,130,0.20)", borderRadius: 2, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { height: "100%", borderRadius: 2, background: `linear-gradient(90deg,${P.butter},${P.pink})`, width: `${pct}%`, transition: "width 0.4s ease" } })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 9, letterSpacing: "0.13em", color: P.muted, fontFamily: SF, margin: 0, textTransform: "uppercase" } }, loading ? T("Generating Rachel's voice\u2026", "Generando voz de Rachel\u2026") : paused ? T("Paused \u2014 tap \u25B6", "En pausa \u2014 toca \u25B6") : playing ? T("Rachel \xB7 " + pct + "%", "Rachel \xB7 " + pct + "%") : T("Tap \u25B6 to begin", "Toca \u25B6 para empezar"))), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+  } }, loading ? /* @__PURE__ */ React.createElement("span", { style: { width: 19, height: 19, border: `2.5px solid rgba(44,26,16,0.18)`, borderTopColor: P.ink, borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" } }) : /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20, lineHeight: 1, color: P.ink } }, playing ? "\u23F8" : "\u25B6")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", gap: 5 } }, /* @__PURE__ */ React.createElement("div", { style: { height: 4, background: "rgba(245,220,130,0.20)", borderRadius: 2, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { height: "100%", borderRadius: 2, background: `linear-gradient(90deg,${P.butter},${P.pink})`, width: `${pct}%`, transition: "width 0.4s ease" } })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 9, letterSpacing: "0.13em", color: P.muted, fontFamily: SF, margin: 0, textTransform: "uppercase" } }, loading ? T("Generating Sarah's voice\u2026", "Generando voz de Sarah\u2026") : paused ? T("Paused \u2014 tap \u25B6", "En pausa \u2014 toca \u25B6") : playing ? T("Sarah \xB7 " + pct + "%", "Sarah \xB7 " + pct + "%") : T("Tap \u25B6 to begin", "Toca \u25B6 para empezar"))), /* @__PURE__ */ React.createElement("button", { onClick: () => {
     stop();
     setMode("read");
   }, style: { width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${P.borderP}`, background: "rgba(255,255,255,0.80)", fontSize: 13, cursor: "pointer", color: P.pinkD, display: "flex", alignItems: "center", justifyContent: "center" } }, "\u25A0")), !loading && !playing && !paused && !error && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 10, color: P.muted, fontFamily: SF, textAlign: "center", lineHeight: 1.55, margin: 0 } }, T("Close your eyes. This is you, reading your own future.", "Cierra los ojos. Eres t\xFA, leyendo tu propio futuro."))));
@@ -1672,12 +1649,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(
 
       var el=document.getElementById('loading');
       if(el){el.style.opacity='0';setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},500);}
-    } catch(e) {
-      showErr('Error: ' + e.message);
-    }
-  }, function() { showErr('Could not load ReactDOM. Check connection and refresh.'); });
-}, function() { showErr('Could not load React. Check connection and refresh.'); });
+    }catch(e){showErr('Error: '+e.message);}
+  },function(){showErr('Could not load ReactDOM. Refresh to try again.');});
+},function(){showErr('Could not load React. Check connection and refresh.');});
 </script>
-
 </body>
 </html>
