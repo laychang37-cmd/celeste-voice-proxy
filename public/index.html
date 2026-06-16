@@ -817,103 +817,143 @@ function OnboardingScreen({ onComplete, onSkip, existingProfile }) {
   if (phase === "notifications") return /* @__PURE__ */ React.createElement(ObFrame, { pct: 95, onBack: back }, /* @__PURE__ */ React.createElement("div", { className: "ob", style: { flex: 1, padding: "72px 32px 24px" } }, /* @__PURE__ */ React.createElement(GLabel, null, T("WHAT YOU'LL RECEIVE", "LO QUE RECIBIR\xC1S")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 34, fontWeight: 400, fontStyle: "italic", color: P.ink, lineHeight: 1.35, margin: "0 0 24px", fontFamily: PF } }, T("Here's how you arrive at it.", "As\xED es como llegas a ello.")), [{ time: practiceTime, title: T("Today is yours.", "Hoy es tuyo."), sub: T("Set the intention.", "Establece la intenci\xF3n."), yellow: true }, { time: T("1:42 PM", "1:42 PM"), title: T("I am always", "Siempre estoy"), sub: T("attracting abundance.", "atrayendo abundancia."), yellow: false }].map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { background: m.yellow ? P.butterL : P.pinkL, borderRadius: 18, padding: "16px 18px", marginBottom: 12, border: `1px solid ${m.yellow ? P.border : P.borderP}` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${P.butter},${P.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: P.ink } }, "\u2726"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, fontWeight: 500, color: P.ink, fontFamily: SF } }, "Celeste")), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: P.muted, fontFamily: SF } }, m.time)), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: PF, fontSize: 20, color: P.ink, margin: "0 0 2px" } }, m.title), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: PF, fontStyle: "italic", fontSize: 20, color: m.yellow ? P.butterD : P.pinkD, margin: 0 } }, m.sub))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: P.muted, fontFamily: SF, lineHeight: 1.65 } }, T("A morning nudge at your hour. Affirmations through the day.", "Un recordatorio matutino. Afirmaciones durante el d\xEDa."))), /* @__PURE__ */ React.createElement("div", { style: { padding: "16px 32px 12px" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "dark", onClick: next, label: T("Start my practice \u2192", "Empezar mi pr\xE1ctica \u2192") })), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", paddingBottom: 44 } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: next, label: T("Maybe later", "Quiz\xE1s despu\xE9s") })));
   return null;
 }
-const PROXY_URL = "https://celeste-voice-proxy.vercel.app";
+function getWarmVoice(lang) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const isES = lang === "es";
+  const preferred = isES ? ["Paulina", "M\xF3nica", "Monica", "Luciana", "Camila", "Valentina", "Laura"] : [
+    "Samantha",
+    "Ava",
+    "Karen",
+    "Allison",
+    "Victoria",
+    "Susan",
+    "Moira",
+    "Google US English",
+    "Microsoft Zira",
+    "Microsoft Eva"
+  ];
+  for (const name of preferred) {
+    const v = voices.find((v2) => v2.name.toLowerCase().includes(name.toLowerCase()));
+    if (v) return v;
+  }
+  return voices.find((v) => v.lang.startsWith(isES ? "es" : "en")) || voices[0];
+}
 function useCelesteVoice(lang) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [error, setError] = useState("");
-  const audioRef = useRef(null);
-  const blobRef = useRef(null);
-  const cleanup = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended = null;
-      audioRef.current.ontimeupdate = null;
-      audioRef.current = null;
-    }
-    if (blobRef.current) {
-      URL.revokeObjectURL(blobRef.current);
-      blobRef.current = null;
-    }
-  }, []);
+  const cancelRef = useRef(false);
+  const chunksRef = useRef([]);
+  const idxRef = useRef(0);
+  const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
   const stop = useCallback(() => {
-    cleanup();
+    cancelRef.current = true;
+    synth == null ? void 0 : synth.cancel();
     setPlaying(false);
     setPaused(false);
     setLoading(false);
     setProgress(0);
-    setError("");
-  }, [cleanup]);
+  }, [synth]);
   const pause = useCallback(() => {
-    var _a;
-    (_a = audioRef.current) == null ? void 0 : _a.pause();
+    synth == null ? void 0 : synth.pause();
     setPlaying(false);
     setPaused(true);
-  }, []);
+  }, [synth]);
   const resume = useCallback(() => {
-    var _a;
-    (_a = audioRef.current) == null ? void 0 : _a.play().catch(() => {
-    });
+    synth == null ? void 0 : synth.resume();
     setPlaying(true);
     setPaused(false);
-  }, []);
-  const speak = useCallback(async (text) => {
-    cleanup();
-    setError("");
-    setLoading(true);
-    setProgress(0);
-    setPlaying(false);
-    setPaused(false);
-    try {
-      const res = await fetch(PROXY_URL + "/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.slice(0, 5e3), lang })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setError((err == null ? void 0 : err.error) || "Error " + res.status);
-        setLoading(false);
-        return;
-      }
-      const blob = await res.blob();
-      if (blob.size < 100) {
-        setError("No audio received");
-        setLoading(false);
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      blobRef.current = url;
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.ontimeupdate = () => {
-        if (audio.duration) setProgress(audio.currentTime / audio.duration);
-      };
-      audio.onended = () => {
+  }, [synth]);
+  const speakChunk = useCallback((idx) => {
+    if (!synth || cancelRef.current || idx >= chunksRef.current.length) {
+      if (!cancelRef.current && idx >= chunksRef.current.length) {
         setPlaying(false);
         setProgress(1);
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        setError("Playback error.");
+      }
+      return;
+    }
+    const utt = new SpeechSynthesisUtterance(chunksRef.current[idx]);
+    const voice = getWarmVoice(lang);
+    if (voice) utt.voice = voice;
+    utt.lang = lang === "es" ? "es-MX" : "en-US";
+    utt.rate = 0.82;
+    utt.pitch = 0.92;
+    utt.volume = 1;
+    utt.onend = () => {
+      if (cancelRef.current) return;
+      idxRef.current = idx + 1;
+      setProgress((idx + 1) / chunksRef.current.length);
+      setTimeout(() => speakChunk(idx + 1), 120);
+    };
+    utt.onerror = (e) => {
+      if (e.error === "interrupted" || e.error === "canceled") return;
+      if (!cancelRef.current) {
         setPlaying(false);
         setLoading(false);
-      };
-      setLoading(false);
-      setPlaying(true);
-      await audio.play().catch(() => {
-        setPlaying(false);
-        setError(lang === "es" ? "Toca \u25B6 para iniciar." : "Tap \u25B6 to start.");
+      }
+    };
+    synth.speak(utt);
+  }, [lang, synth]);
+  const speak = useCallback(async (rawText) => {
+    var _a, _b, _c;
+    if (!synth) return;
+    synth.cancel();
+    cancelRef.current = false;
+    setLoading(true);
+    setPlaying(false);
+    setPaused(false);
+    setProgress(0);
+    if (!synth.getVoices().length) {
+      await new Promise((res) => {
+        const h = () => {
+          synth.onvoiceschanged = null;
+          res();
+        };
+        synth.onvoiceschanged = h;
+        setTimeout(h, 1500);
       });
-    } catch (e) {
-      setError("Network error \u2014 check your connection");
-      setLoading(false);
     }
-  }, [lang, cleanup]);
-  useEffect(() => () => cleanup(), [cleanup]);
-  return { speak, pause, resume, stop, playing, paused, loading, progress, error };
+    let spoken = rawText;
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1200,
+          system: lang === "es" ? "Eres una narradora \xEDntima y c\xE1lida. Reescribe el texto para que fluya como pensamientos hablados naturalmente: une p\xE1rrafos con comas o conjunciones, elimina guiones, puntos suspensivos, saltos de l\xEDnea dobles. Frases fluidas. Solo devuelve el texto reescrito, nada m\xE1s." : "You are a warm intimate narrator. Rewrite the text to flow as natural spoken thought: join paragraphs with commas or conjunctions, remove dashes, ellipses, double line breaks. Flowing sentences. Return only the rewritten text, nothing else.",
+          messages: [{ role: "user", content: rawText.slice(0, 3e3) }]
+        })
+      });
+      const data = await res.json();
+      const improved = (_c = (_b = (_a = data == null ? void 0 : data.content) == null ? void 0 : _a[0]) == null ? void 0 : _b.text) == null ? void 0 : _c.trim();
+      if (improved && improved.length > 30) spoken = improved;
+    } catch (e) {
+    }
+    const sentences = spoken.match(/[^.!?]+[.!?]*/g) || [spoken];
+    const chunks = [];
+    let cur = "";
+    for (const s of sentences) {
+      if (cur.length + s.length > 160 && cur) {
+        chunks.push(cur.trim());
+        cur = s;
+      } else cur += s;
+    }
+    if (cur.trim()) chunks.push(cur.trim());
+    chunksRef.current = chunks.filter(Boolean);
+    idxRef.current = 0;
+    setLoading(false);
+    setPlaying(true);
+    speakChunk(0);
+  }, [lang, synth, speakChunk]);
+  useEffect(() => () => {
+    cancelRef.current = true;
+    synth == null ? void 0 : synth.cancel();
+  }, [synth]);
+  return { speak, pause, resume, stop, playing, paused, loading, progress };
 }
 function VoiceBar({ lang, text }) {
   const T = (en, es) => lang === "es" ? es : en;
