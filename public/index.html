@@ -898,46 +898,29 @@ function useCelesteVoice(lang) {
     synth.speak(utt);
   }, [lang, synth]);
   const speak = useCallback(async (rawText) => {
-    var _a, _b, _c;
     if (!synth) return;
     synth.cancel();
     cancelRef.current = false;
-    setLoading(true);
-    setPlaying(false);
+    setLoading(false);
+    setPlaying(true);
     setPaused(false);
     setProgress(0);
-    if (!synth.getVoices().length) {
+    let voices = synth.getVoices();
+    if (!voices.length) {
       await new Promise((res) => {
         const h = () => {
           synth.onvoiceschanged = null;
           res();
         };
         synth.onvoiceschanged = h;
-        setTimeout(h, 1500);
+        setTimeout(h, 800);
       });
     }
-    let spoken = rawText;
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1200,
-          system: lang === "es" ? "Eres una narradora \xEDntima y c\xE1lida. Reescribe el texto para que fluya como pensamientos hablados naturalmente: une p\xE1rrafos con comas o conjunciones, elimina guiones, puntos suspensivos, saltos de l\xEDnea dobles. Frases fluidas. Solo devuelve el texto reescrito, nada m\xE1s." : "You are a warm intimate narrator. Rewrite the text to flow as natural spoken thought: join paragraphs with commas or conjunctions, remove dashes, ellipses, double line breaks. Flowing sentences. Return only the rewritten text, nothing else.",
-          messages: [{ role: "user", content: rawText.slice(0, 3e3) }]
-        })
-      });
-      const data = await res.json();
-      const improved = (_c = (_b = (_a = data == null ? void 0 : data.content) == null ? void 0 : _a[0]) == null ? void 0 : _b.text) == null ? void 0 : _c.trim();
-      if (improved && improved.length > 30) spoken = improved;
-    } catch (e) {
-    }
-    const sentences = spoken.match(/[^.!?]+[.!?]*/g) || [spoken];
+    const sentences = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
     const chunks = [];
     let cur = "";
     for (const s of sentences) {
-      if (cur.length + s.length > 160 && cur) {
+      if (cur.length + s.length > 200 && cur) {
         chunks.push(cur.trim());
         cur = s;
       } else cur += s;
@@ -945,8 +928,6 @@ function useCelesteVoice(lang) {
     if (cur.trim()) chunks.push(cur.trim());
     chunksRef.current = chunks.filter(Boolean);
     idxRef.current = 0;
-    setLoading(false);
-    setPlaying(true);
     speakChunk(0);
   }, [lang, synth, speakChunk]);
   useEffect(() => () => {
